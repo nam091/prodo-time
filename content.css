@@ -231,7 +231,7 @@
   position: absolute;
   top: calc(100% + 10px);
   left: 50%;
-  width: 420px;
+  width: 340px;
   padding: 0;
   background: var(--pt-bg-panel);
   backdrop-filter: blur(var(--pt-blur)) saturate(2);
@@ -254,7 +254,7 @@
 
 /* Inner content wrapper — this is where the real padding lives */
 #ptPanelContent {
-  padding: 28px 32px;
+  padding: 20px 22px;
   overflow: hidden;
   word-wrap: break-word;
   overflow-wrap: break-word;
