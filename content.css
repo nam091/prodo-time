@@ -3,27 +3,27 @@
    ============================================= */
 
 #prodotime-root {
-  --pt-bg: rgba(28, 28, 32, 0.72);
-  --pt-bg-hover: rgba(44, 44, 50, 0.85);
-  --pt-bg-panel: rgba(36, 36, 42, 0.88);
-  --pt-border: rgba(255, 255, 255, 0.08);
-  --pt-border-focus: rgba(255, 255, 255, 0.18);
-  --pt-text: rgba(255, 255, 255, 0.92);
-  --pt-text-dim: rgba(255, 255, 255, 0.5);
-  --pt-text-muted: rgba(255, 255, 255, 0.3);
-  --pt-accent: #7c8aff;
-  --pt-accent-glow: rgba(124, 138, 255, 0.35);
-  --pt-green: #34d399;
-  --pt-orange: #fb923c;
-  --pt-red: #f87171;
-  --pt-pink: #f472b6;
-  --pt-radius: 18px;
-  --pt-radius-sm: 10px;
-  --pt-blur: 28px;
-  --pt-shadow: 0 8px 40px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.25);
-  --pt-font: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Segoe UI', system-ui, sans-serif;
-  --pt-mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Menlo', monospace;
-  --pt-transition: 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  --pt-bg: rgba(25, 25, 30, 0.4);
+  --pt-bg-hover: rgba(45, 45, 55, 0.55);
+  --pt-bg-panel: rgba(28, 28, 35, 0.6);
+  --pt-border: rgba(255, 255, 255, 0.1);
+  --pt-border-focus: rgba(255, 255, 255, 0.2);
+  --pt-text: rgba(255, 255, 255, 0.98);
+  --pt-text-dim: rgba(255, 255, 255, 0.75);
+  --pt-text-muted: rgba(255, 255, 255, 0.45);
+  --pt-accent: #818cf8;
+  --pt-accent-glow: rgba(129, 140, 248, 0.4);
+  --pt-radius: 24px;
+  --pt-radius-sm: 14px;
+  --pt-blur: 48px;
+  --pt-shadow: 
+    0 12px 48px rgba(0,0,0,0.5),
+    0 2px 12px rgba(0,0,0,0.3),
+    inset 0 0.8px 0 rgba(255,255,255,0.2),
+    inset 0 0 0 0.5px rgba(255,255,255,0.08);
+  --pt-font: 'SF Pro Text', 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Inter', system-ui, sans-serif;
+  --pt-mono: 'JetBrains Mono', 'SF Mono', monospace;
+  --pt-transition: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 
   position: fixed;
   z-index: 2147483647;
@@ -47,10 +47,10 @@
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 5px 6px;
+  padding: 6px 8px;
   background: var(--pt-bg);
-  backdrop-filter: blur(var(--pt-blur)) saturate(1.6);
-  -webkit-backdrop-filter: blur(var(--pt-blur)) saturate(1.6);
+  backdrop-filter: blur(var(--pt-blur)) saturate(2.2);
+  -webkit-backdrop-filter: blur(var(--pt-blur)) saturate(2.2);
   border: 1px solid var(--pt-border);
   border-radius: var(--pt-radius);
   box-shadow: var(--pt-shadow);
@@ -224,11 +224,11 @@
   position: absolute;
   top: calc(100% + 8px);
   left: 0;
-  min-width: 280px;
-  padding: 14px;
+  min-width: 360px;
+  padding: 28px;
   background: var(--pt-bg-panel);
-  backdrop-filter: blur(var(--pt-blur)) saturate(1.6);
-  -webkit-backdrop-filter: blur(var(--pt-blur)) saturate(1.6);
+  backdrop-filter: blur(var(--pt-blur)) saturate(2.8) brightness(1.1);
+  -webkit-backdrop-filter: blur(var(--pt-blur)) saturate(2.8) brightness(1.1);
   border: 1px solid var(--pt-border);
   border-radius: var(--pt-radius);
   box-shadow: var(--pt-shadow);
@@ -246,26 +246,40 @@
 
 /* ---- Panel Section Titles ---- */
 .pt-section-title {
-  font-size: 10px;
-  font-weight: 600;
+  font-size: 11px;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.2px;
-  color: var(--pt-text-muted);
-  margin-bottom: 10px;
+  letter-spacing: 1.5px;
+  color: var(--pt-text-dim);
+  margin-bottom: 20px;
+  display: block;
+}
+
+.pt-info-text {
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--pt-text-dim);
+  margin-bottom: 24px;
+  padding: 0 4px;
+}
+
+.pt-info-text b {
+  color: var(--pt-text);
+  font-weight: 600;
 }
 
 /* ---- Countdown Presets ---- */
 .pt-presets {
   display: flex;
-  gap: 4px;
+  gap: 8px;
   flex-wrap: wrap;
-  margin-bottom: 12px;
+  margin-bottom: 20px;
 }
 
 .pt-preset {
-  padding: 6px 12px;
+  padding: 8px 16px;
   border: 1px solid var(--pt-border);
-  border-radius: 8px;
+  border-radius: var(--pt-radius-sm);
   background: transparent;
   color: var(--pt-text-dim);
   font-family: var(--pt-mono);
@@ -291,8 +305,9 @@
 /* ---- Custom Input Row ---- */
 .pt-input-row {
   display: flex;
-  gap: 6px;
+  gap: 12px;
   align-items: center;
+  margin-top: 10px;
 }
 
 .pt-input-group {
@@ -304,9 +319,9 @@
 
 .pt-input-group input {
   width: 100%;
-  padding: 7px 8px;
+  padding: 10px 12px;
   border: 1px solid var(--pt-border);
-  border-radius: 8px;
+  border-radius: var(--pt-radius-sm);
   background: rgba(0,0,0,0.25);
   color: var(--pt-text);
   font-family: var(--pt-mono);
@@ -330,7 +345,10 @@
 .pt-input-group .pt-unit {
   font-size: 11px;
   color: var(--pt-text-muted);
-  font-weight: 500;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-left: 8px;
   flex-shrink: 0;
 }
 

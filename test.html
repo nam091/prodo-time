@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProdoTime UI Test - Liquid Glass</title>
+  <link rel="stylesheet" href="content.css">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #1e293b, #0f172a);
+      background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&q=80&w=2070'); /* Mountain background for glass effect */
+      background-size: cover;
+      background-position: center;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-family: -apple-system, system-ui, sans-serif;
+    }
+    .content {
+      text-align: center;
+      max-width: 600px;
+      padding: 40px;
+      background: rgba(0,0,0,0.3);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      border: 1px solid rgba(255,255,255,0.1);
+    }
+  </style>
+</head>
+<body>
+  <div class="content">
+    <h1>ProdoTime Liquid Glass Test</h1>
+    <p>The floating timer bar should appear at the top. Use it to test the expanded panels, spacing, and glass effects.</p>
+  </div>
+  <script src="content.js"></script>
+</body>
+</html>

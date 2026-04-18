@@ -435,7 +435,7 @@
       }
       $panelContent.innerHTML = `
         <div class="pt-section-title">Stopwatch Laps</div>
-        ${lapsHTML || '<div style="color:var(--pt-text-muted);font-size:11px">Press Lap while running to record splits</div>'}`;
+        ${lapsHTML || '<div class="pt-info-text">Press the <b>Lap</b> button while the stopwatch is running to record your splits. Laps will appear here in reverse order.</div>'}`;
     }
 
     else if (currentTab === 'countdown') {
@@ -444,6 +444,7 @@
       const curS = Math.floor((cd.total / 1000) % 60);
       $panelContent.innerHTML = `
         <div class="pt-section-title">Countdown Timer</div>
+        <div class="pt-info-text">Choose a quick preset or set a custom duration below. The timer will notify you when it reaches zero.</div>
         <div class="pt-presets">
           <button class="pt-preset" data-sec="30">30s</button>
           <button class="pt-preset" data-sec="60">1m</button>
@@ -457,7 +458,7 @@
           <div class="pt-input-group"><input type="number" id="ptCdM" value="${curM || 5}" min="0" max="59"><span class="pt-unit">m</span></div>
           <div class="pt-input-group"><input type="number" id="ptCdS" value="${curS}" min="0" max="59"><span class="pt-unit">s</span></div>
         </div>
-        <button class="pt-action-btn" id="ptCdSet">Set & Start</button>`;
+        <button class="pt-action-btn" id="ptCdSet">Set & Start Countdown</button>`;
 
       // Preset clicks
       $panelContent.querySelectorAll('.pt-preset').forEach(btn => {
@@ -498,12 +499,12 @@
 
       $panelContent.innerHTML = `
         <div class="pt-section-title">Sentences Per Second</div>
-        <div class="pt-input-row" style="margin-bottom:8px">
+        <div class="pt-info-text">Calculate your reading or typing speed. Use the <b>Start (▶)</b> button on the main bar to measure time automatically, or enter the values manually.</div>
+        <div class="pt-input-row" style="margin-bottom:12px">
           <div class="pt-input-group"><input type="number" id="ptSpsCount" placeholder="Sentences" min="0"></div>
           <div class="pt-input-group"><input type="number" id="ptSpsSecs" placeholder="Seconds" min="0" step="0.1" value="${sps.elapsed > 0 ? (sps.elapsed / 1000).toFixed(1) : ''}"></div>
         </div>
-        <div style="font-size:10px;color:var(--pt-text-muted);margin-bottom:8px">Use the timer ▶ to measure time, or enter manually</div>
-        <button class="pt-action-btn" id="ptSpsCalc">Calculate SPS</button>
+        <button class="pt-action-btn" id="ptSpsCalc">Calculate Speed</button>
         ${resultHTML}`;
 
       root.querySelector('#ptSpsCalc').addEventListener('click', (e) => {
@@ -520,16 +521,17 @@
       }
       $panelContent.innerHTML = `
         <div class="pt-section-title">Pomodoro Timer</div>
+        <div class="pt-info-text">Improve your productivity with focus sessions. The bar shows your current progress. You can skip any session with the <b>Skip (⏭)</b> button.</div>
         <div class="pt-pomo-dots">${dotsHTML}</div>
         <div class="pt-pomo-label">${pomo.isFocus ? `<span>Focus</span> ${pomo.currentNum}/${pomo.sessions}` : `<span>Break</span> ${pomo.currentNum - 1}/${pomo.sessions}`}</div>
-        <div style="margin-top:12px">
-          <div class="pt-section-title">Settings</div>
-          <div class="pt-input-row" style="margin-bottom:6px">
+        <div style="margin-top:20px">
+          <div class="pt-section-title">Pomodoro Settings</div>
+          <div class="pt-input-row" style="margin-bottom:12px">
             <div class="pt-input-group"><input type="number" id="ptPomoF" value="${pomo.focusMin}" min="1" max="90"><span class="pt-unit">focus</span></div>
             <div class="pt-input-group"><input type="number" id="ptPomoS" value="${pomo.shortMin}" min="1" max="30"><span class="pt-unit">short</span></div>
             <div class="pt-input-group"><input type="number" id="ptPomoL" value="${pomo.longMin}" min="1" max="60"><span class="pt-unit">long</span></div>
           </div>
-          <button class="pt-action-btn" id="ptPomoApply">Apply Settings</button>
+          <button class="pt-action-btn" id="ptPomoApply">Update Settings & Reset</button>
         </div>`;
 
       root.querySelector('#ptPomoApply')?.addEventListener('click', (e) => {
