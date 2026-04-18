@@ -222,10 +222,11 @@
 /* ---- Expand Panel ---- */
 .pt-panel {
   position: absolute;
-  top: calc(100% + 8px);
-  left: 0;
-  min-width: 360px;
-  padding: 28px;
+  top: calc(100% + 12px);
+  left: 50%;
+  transform: translateX(-50%) translateY(-6px) scale(0.97);
+  min-width: 400px;
+  padding: 32px 36px;
   background: var(--pt-bg-panel);
   backdrop-filter: blur(var(--pt-blur)) saturate(2.8) brightness(1.1);
   -webkit-backdrop-filter: blur(var(--pt-blur)) saturate(2.8) brightness(1.1);
@@ -233,14 +234,14 @@
   border-radius: var(--pt-radius);
   box-shadow: var(--pt-shadow);
   opacity: 0;
-  transform: translateY(-6px) scale(0.97);
   pointer-events: none;
-  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  text-align: left;
 }
 
 .pt-panel.open {
   opacity: 1;
-  transform: translateY(0) scale(1);
+  transform: translateX(-50%) translateY(0) scale(1);
   pointer-events: auto;
 }
 
@@ -256,11 +257,11 @@
 }
 
 .pt-info-text {
-  font-size: 13px;
+  font-size: 13.5px;
   line-height: 1.6;
   color: var(--pt-text-dim);
   margin-bottom: 24px;
-  padding: 0 4px;
+  letter-spacing: 0.1px;
 }
 
 .pt-info-text b {
