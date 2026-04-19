@@ -386,8 +386,6 @@
     $time.classList.toggle('running', !!running);
   }
 
-  let preCollapseLeft = null; // store original left before collapse
-
   function updateDisplay() {
     const isRunning = currentTab === 'stopwatch' ? sw.running
       : currentTab === 'countdown' ? cd.running
@@ -412,39 +410,10 @@
       $extra.style.display = 'none';
     }
 
-    const wasCollapsed = root.querySelector('.pt-collapsed') !== null;
-
-    if (isRunning && !wasCollapsed) {
-      // Measure left-side width before collapsing
-      let leftWidth = 0;
-      const leftEls = root.querySelectorAll('.pt-collapsible:not(.pt-right-collapse)');
-      leftEls.forEach(el => { leftWidth += el.offsetWidth; });
-      // Include gaps (4px per collapsed element)
-      leftWidth += leftEls.length * 4;
-
-      preCollapseLeft = root.offsetLeft;
-      
-      // Collapse
-      root.querySelectorAll('.pt-collapsible').forEach(el => {
-        el.classList.add('pt-collapsed');
-      });
-
-      // Shift root right so timer stays in place
-      root.style.left = (preCollapseLeft + leftWidth) + 'px';
-      root.style.transition = 'left 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
-    } else if (!isRunning && wasCollapsed) {
-      // Expand
-      root.querySelectorAll('.pt-collapsible').forEach(el => {
-        el.classList.remove('pt-collapsed');
-      });
-
-      // Restore original position
-      if (preCollapseLeft !== null) {
-        root.style.left = preCollapseLeft + 'px';
-        root.style.transition = 'left 0.35s cubic-bezier(0.16, 1, 0.3, 1)';
-        preCollapseLeft = null;
-      }
-    }
+    // Compact mode: smooth CSS-only collapse
+    root.querySelectorAll('.pt-collapsible').forEach(el => {
+      el.classList.toggle('pt-collapsed', isRunning);
+    });
 
     // Close panel when entering compact mode
     if (isRunning && panelOpen) {
