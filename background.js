@@ -27,17 +27,8 @@ let pendingMessages = [];
 chrome.storage.local.get(TIMER_STATE_KEY, (data) => {
   if (data[TIMER_STATE_KEY]) {
     Object.assign(state, data[TIMER_STATE_KEY]);
-    console.log('[PT] State loaded:', JSON.stringify({
-      swRunning: state.swRunning,
-      swStartTime: state.swStartTime,
-      swElapsed: state.swElapsed,
-      currentTab: state.currentTab,
-    }));
-  } else {
-    console.log('[PT] No saved state, using defaults');
   }
   stateReady = true;
-  console.log('[PT] State ready, pending:', pendingMessages.length);
   pendingMessages.forEach(({ msg, sender, sendResponse }) => {
     handleMessage(msg, sender, sendResponse);
   });

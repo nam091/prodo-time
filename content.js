@@ -263,21 +263,11 @@
 
   // ============ POLLING LOOP ============
   let pollTimer = null;
-  let logCount = 0;
   function startPolling() {
     if (pollTimer) return;
     pollTimer = setInterval(async () => {
       const snap = await sendBg({ type: 'PT_GET_STATE' });
-      if (snap) {
-        if (logCount < 5 || (snap.swRunning && logCount % 20 === 0)) {
-          console.log('[PT content] poll:', JSON.stringify({
-            swRunning: snap.swRunning, swElapsed: snap.swElapsed,
-            currentTab: snap.currentTab,
-          }));
-        }
-        logCount++;
-        renderSnapshot(snap);
-      }
+      if (snap) renderSnapshot(snap);
     }, 50);
   }
 
