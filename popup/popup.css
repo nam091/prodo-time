@@ -34,6 +34,48 @@ body {
   background: linear-gradient(180deg, rgba(129,140,248,0.08) 0%, transparent 100%);
 }
 
+/* ---- Timer Status ---- */
+.timer-status {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  font-size: 12px;
+}
+
+.status-indicator {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.2);
+  flex-shrink: 0;
+}
+
+.status-indicator.running {
+  background: #34d399;
+  box-shadow: 0 0 6px rgba(52,211,153,0.5);
+  animation: status-pulse 1.5s ease-in-out infinite;
+}
+
+@keyframes status-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+.status-label {
+  color: rgba(255,255,255,0.5);
+  font-weight: 500;
+}
+
+.status-time {
+  margin-left: auto;
+  font-family: 'SF Mono', 'Cascadia Code', 'Consolas', monospace;
+  font-weight: 600;
+  color: rgba(255,255,255,0.8);
+  font-size: 13px;
+}
+
 .popup-logo {
   display: flex;
   align-items: center;

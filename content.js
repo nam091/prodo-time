@@ -1,5 +1,6 @@
 /* =============================================
-   ProdoTime v2 — Content Script (Overlay Bar)
+   ProdoTime v2.2 — Content Script (Display Only)
+   Timer state lives in background.js.
    ============================================= */
 (function () {
   'use strict';
@@ -33,47 +34,39 @@
   const fmtMs = (ms) => pad(Math.floor((ms % 1000) / 10));
 
   // ============ SETTINGS ============
-  const DEFAULTS = {
+  const SETTINGS_DEFAULTS = {
     autoShow: true, uiScale: 100, uiOpacity: 100,
     featStopwatch: true, featCountdown: true, featSps: true, featPomodoro: true,
     pomoFocus: 25, pomoShort: 5, pomoLong: 15, pomoSessions: 4,
     soundAlert: true, defaultTab: 'stopwatch',
   };
-  let settings = { ...DEFAULTS };
+  let settings = { ...SETTINGS_DEFAULTS };
 
-  // ============ STATE ============
+  // ============ LOCAL UI STATE ============
   let currentTab = 'stopwatch';
   let panelOpen = false;
+  let lastState = null; // last snapshot from background
 
-  // Stopwatch
-  const sw = { running: false, start: 0, elapsed: 0, interval: null, laps: [] };
-  // Countdown
-  const cd = { running: false, start: 0, total: 0, remain: 0, interval: null };
-  // SPS
-  const sps = { timerRunning: false, start: 0, elapsed: 0, interval: null, lastResult: null };
-  // Pomodoro
-  const pomo = {
-    running: false, start: 0, total: 25 * 60 * 1000, remain: 25 * 60 * 1000,
-    interval: null, session: 0, focusMin: 25, shortMin: 5, longMin: 15, sessions: 4,
-    get isFocus() { return this.session % 2 === 0; },
-    get currentNum() { return Math.floor(this.session / 2) + 1; },
-  };
+  // ============ SEND MESSAGE TO BACKGROUND ============
+  function sendBg(msg) {
+    return new Promise((resolve) => {
+      chrome.runtime.sendMessage(msg, (resp) => {
+        if (chrome.runtime.lastError) { resolve(null); return; }
+        resolve(resp);
+      });
+    });
+  }
 
   // ============ BUILD DOM ============
   const root = document.createElement('div');
   root.id = 'prodotime-root';
   root.className = 'pt-visible';
 
-  // Saved position
   const savedPos = JSON.parse(localStorage.getItem('pt-pos') || 'null');
   root.style.top = savedPos ? savedPos.top + 'px' : '16px';
   root.style.left = savedPos ? savedPos.left + 'px' : 'calc(50% - 200px)';
 
-  root.innerHTML = buildHTML();
-  document.body.appendChild(root);
-
-  function buildHTML() {
-    return `
+  root.innerHTML = `
     <div class="pt-bar" id="ptBar">
       <div class="pt-drag pt-collapsible" id="ptDrag">${ICONS.grip}</div>
       <div class="pt-divider pt-collapsible"></div>
@@ -99,11 +92,10 @@
       <button class="pt-close pt-collapsible pt-right-collapse" id="ptClose" title="Hide">${ICONS.x}</button>
     </div>
 
-    <!-- Expandable Panel -->
     <div class="pt-panel" id="ptPanel">
       <div id="ptPanelContent"></div>
     </div>`;
-  }
+  document.body.appendChild(root);
 
   // ============ REFS ============
   const $bar = root.querySelector('#ptBar');
@@ -116,52 +108,54 @@
   const $panelContent = root.querySelector('#ptPanelContent');
   const $close = root.querySelector('#ptClose');
 
-  // ============ TABS ============
+  // ============ TAB SWITCHING ============
   root.querySelectorAll('.pt-tab-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
       root.querySelectorAll('.pt-tab-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       currentTab = btn.dataset.tab;
-      stopAll();
-      updateDisplay();
+      const snap = await sendBg({ type: 'PT_SET_TAB', tab: currentTab });
+      if (snap) renderSnapshot(snap);
       updatePanel();
     });
   });
 
-  function stopAll() {
-    // Stop any running timers when switching tabs
-    if (sw.running) { sw.running = false; clearInterval(sw.interval); }
-    if (cd.running) { cd.running = false; clearInterval(cd.interval); }
-    if (sps.timerRunning) { sps.timerRunning = false; clearInterval(sps.interval); }
-    if (pomo.running) { pomo.running = false; clearInterval(pomo.interval); }
-    sw.elapsed = 0; sw.laps = [];
-    cd.remain = 0; cd.total = 0;
-    sps.elapsed = 0; sps.lastResult = null;
-    pomo.session = 0; pomo.remain = pomo.focusMin * 60 * 1000; pomo.total = pomo.remain;
-  }
-
-  // ============ PLAY / PAUSE ============
-  $play.addEventListener('click', (e) => {
+  // ============ PLAY/PAUSE ============
+  $play.addEventListener('click', async (e) => {
     e.stopPropagation();
-    if (currentTab === 'stopwatch') toggleStopwatch();
-    else if (currentTab === 'countdown') toggleCountdown();
-    else if (currentTab === 'sps') toggleSpsTimer();
-    else if (currentTab === 'pomodoro') togglePomodoro();
+    const snap = await sendBg({ type: 'PT_PLAY_PAUSE' });
+    if (snap) {
+      if (snap.needsInput) {
+        panelOpen = true;
+        $panel.classList.add('open');
+        renderSnapshot(snap);
+        updatePanel();
+        return;
+      }
+      renderSnapshot(snap);
+    }
   });
 
-  $reset.addEventListener('click', (e) => {
+  // ============ RESET ============
+  $reset.addEventListener('click', async (e) => {
     e.stopPropagation();
-    if (currentTab === 'stopwatch') resetStopwatch();
-    else if (currentTab === 'countdown') resetCountdown();
-    else if (currentTab === 'sps') resetSpsTimer();
-    else if (currentTab === 'pomodoro') resetPomodoro();
+    const snap = await sendBg({ type: 'PT_RESET' });
+    if (snap) renderSnapshot(snap);
+    if (panelOpen) updatePanel();
   });
 
-  $extra.addEventListener('click', (e) => {
+  // ============ EXTRA (LAP / SKIP) ============
+  $extra.addEventListener('click', async (e) => {
     e.stopPropagation();
-    if (currentTab === 'stopwatch') lapStopwatch();
-    else if (currentTab === 'pomodoro') skipPomodoro();
+    if (currentTab === 'stopwatch') {
+      const snap = await sendBg({ type: 'PT_LAP' });
+      if (snap) { lastState = snap; if (panelOpen) updatePanel(); }
+    } else if (currentTab === 'pomodoro') {
+      const snap = await sendBg({ type: 'PT_SKIP_POMO' });
+      if (snap) renderSnapshot(snap);
+      if (panelOpen) updatePanel();
+    }
   });
 
   // ============ EXPAND PANEL ============
@@ -172,7 +166,6 @@
     updatePanel();
   });
 
-  // Close on outside click
   document.addEventListener('click', (e) => {
     if (panelOpen && !root.contains(e.target)) {
       panelOpen = false;
@@ -180,20 +173,17 @@
     }
   });
 
-  // ============ CLOSE / TOGGLE ============
+  // ============ CLOSE ============
   $close.addEventListener('click', (e) => {
     e.stopPropagation();
     root.classList.add('pt-hidden');
     root.classList.remove('pt-visible');
   });
 
-
-
   // ============ DRAG ============
   let isDragging = false, dragOffX = 0, dragOffY = 0;
 
   $bar.addEventListener('mousedown', (e) => {
-    // Don't drag if clicking buttons
     if (e.target.closest('button') || e.target.closest('input')) return;
     isDragging = true;
     dragOffX = e.clientX - root.offsetLeft;
@@ -214,190 +204,38 @@
     if (!isDragging) return;
     isDragging = false;
     $bar.classList.remove('dragging');
-    localStorage.setItem('pt-pos', JSON.stringify({
-      top: root.offsetTop,
-      left: root.offsetLeft,
-    }));
+    localStorage.setItem('pt-pos', JSON.stringify({ top: root.offsetTop, left: root.offsetLeft }));
   });
 
-  // ============ STOPWATCH ============
-  function toggleStopwatch() {
-    if (sw.running) {
-      sw.running = false;
-      sw.elapsed = performance.now() - sw.start;
-      clearInterval(sw.interval);
-    } else {
-      sw.running = true;
-      sw.start = performance.now() - sw.elapsed;
-      sw.interval = setInterval(tickStopwatch, 33);
-    }
-    updateDisplay();
-  }
+  // ============ RENDER SNAPSHOT ============
+  function renderSnapshot(snap) {
+    lastState = snap;
+    currentTab = snap.currentTab;
 
-  function tickStopwatch() {
-    sw.elapsed = performance.now() - sw.start;
-    renderTime(sw.elapsed, sw.running);
-  }
+    // Sync tab buttons
+    root.querySelectorAll('.pt-tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === currentTab);
+    });
 
-  function resetStopwatch() {
-    sw.running = false; clearInterval(sw.interval);
-    sw.elapsed = 0; sw.laps = [];
-    updateDisplay();
-    if (panelOpen) updatePanel();
-  }
+    const isRunning = currentTab === 'stopwatch' ? snap.swRunning
+      : currentTab === 'countdown' ? snap.cdRunning
+      : currentTab === 'sps' ? snap.spsRunning
+      : snap.pomoRunning;
 
-  function lapStopwatch() {
-    if (!sw.running) return;
-    const prev = sw.laps.reduce((a, b) => a + b, 0);
-    sw.laps.push(sw.elapsed - prev);
-    if (panelOpen) updatePanel();
-  }
-
-  // ============ COUNTDOWN ============
-  function toggleCountdown() {
-    if (cd.running) {
-      cd.running = false;
-      clearInterval(cd.interval);
-    } else {
-      if (cd.remain <= 0) {
-        // Get from panel inputs
-        cd.total = getCountdownInputMs();
-        if (cd.total <= 0) { panelOpen = true; $panel.classList.add('open'); updatePanel(); return; }
-        cd.remain = cd.total;
-      }
-      cd.running = true;
-      cd.start = performance.now();
-      const startRemain = cd.remain;
-      cd.interval = setInterval(() => {
-        cd.remain = Math.max(0, startRemain - (performance.now() - cd.start));
-        renderTime(cd.remain, cd.running);
-        if (cd.remain <= 0) {
-          cd.running = false; clearInterval(cd.interval);
-          updateDisplay();
-        }
-      }, 50);
-    }
-    updateDisplay();
-  }
-
-  function resetCountdown() {
-    cd.running = false; clearInterval(cd.interval);
-    cd.remain = 0; cd.total = 0;
-    updateDisplay();
-  }
-
-  function getCountdownInputMs() {
-    const h = parseInt(root.querySelector('#ptCdH')?.value) || 0;
-    const m = parseInt(root.querySelector('#ptCdM')?.value) || 0;
-    const s = parseInt(root.querySelector('#ptCdS')?.value) || 0;
-    return (h * 3600 + m * 60 + s) * 1000;
-  }
-
-  // ============ SPS TIMER ============
-  function toggleSpsTimer() {
-    if (sps.timerRunning) {
-      sps.timerRunning = false; clearInterval(sps.interval);
-      sps.elapsed = performance.now() - sps.start;
-    } else {
-      sps.timerRunning = true;
-      sps.start = performance.now() - sps.elapsed;
-      sps.interval = setInterval(() => {
-        sps.elapsed = performance.now() - sps.start;
-        renderTime(sps.elapsed, true);
-      }, 100);
-    }
-    updateDisplay();
-    if (panelOpen) updatePanel();
-  }
-
-  function resetSpsTimer() {
-    sps.timerRunning = false; clearInterval(sps.interval);
-    sps.elapsed = 0; sps.lastResult = null;
-    updateDisplay();
-    if (panelOpen) updatePanel();
-  }
-
-  function calcSps() {
-    const sentences = parseFloat(root.querySelector('#ptSpsCount')?.value);
-    let seconds;
-    if (sps.elapsed > 0) {
-      seconds = sps.elapsed / 1000;
-    } else {
-      seconds = parseFloat(root.querySelector('#ptSpsSecs')?.value);
-    }
-    if (!sentences || !seconds || seconds <= 0) return;
-    sps.lastResult = { sentences, seconds, sps: sentences / seconds };
-    updatePanel();
-  }
-
-  // ============ POMODORO ============
-  function togglePomodoro() {
-    if (pomo.running) {
-      pomo.running = false; clearInterval(pomo.interval);
-    } else {
-      pomo.running = true;
-      pomo.start = performance.now();
-      const startRemain = pomo.remain;
-      pomo.interval = setInterval(() => {
-        pomo.remain = Math.max(0, startRemain - (performance.now() - pomo.start));
-        renderTime(pomo.remain, true);
-        if (pomo.remain <= 0) {
-          pomo.running = false; clearInterval(pomo.interval);
-          nextPomoSession();
-          updateDisplay();
-          if (panelOpen) updatePanel();
-        }
-      }, 100);
-    }
-    updateDisplay();
-  }
-
-  function resetPomodoro() {
-    pomo.running = false; clearInterval(pomo.interval);
-    pomo.session = 0;
-    pomo.total = pomo.focusMin * 60 * 1000;
-    pomo.remain = pomo.total;
-    updateDisplay();
-    if (panelOpen) updatePanel();
-  }
-
-  function skipPomodoro() {
-    pomo.running = false; clearInterval(pomo.interval);
-    nextPomoSession();
-    updateDisplay();
-    if (panelOpen) updatePanel();
-  }
-
-  function nextPomoSession() {
-    pomo.session++;
-    if (pomo.session >= pomo.sessions * 2) pomo.session = 0;
-    if (pomo.isFocus) {
-      pomo.total = pomo.focusMin * 60 * 1000;
-    } else {
-      const isLong = pomo.currentNum >= pomo.sessions;
-      pomo.total = (isLong ? pomo.longMin : pomo.shortMin) * 60 * 1000;
-    }
-    pomo.remain = pomo.total;
-  }
-
-  // ============ RENDER ============
-  function renderTime(ms, running) {
+    // Time
+    let ms = 0;
+    if (currentTab === 'stopwatch') ms = snap.swElapsed;
+    else if (currentTab === 'countdown') ms = snap.cdRemain;
+    else if (currentTab === 'sps') ms = snap.spsElapsed;
+    else ms = snap.pomoRemain;
     $time.innerHTML = `${fmtTime(ms)}<span class="pt-ms">.${fmtMs(ms)}</span>`;
-    $time.classList.toggle('running', !!running);
-  }
+    $time.classList.toggle('running', isRunning);
 
-  function updateDisplay() {
-    const isRunning = currentTab === 'stopwatch' ? sw.running
-      : currentTab === 'countdown' ? cd.running
-      : currentTab === 'sps' ? sps.timerRunning
-      : pomo.running;
-
-    // Play/Pause button
+    // Play/Pause
     $play.innerHTML = isRunning ? ICONS.pause : ICONS.play;
     $play.className = `pt-ctrl-btn ${isRunning ? 'pause' : 'play'}`;
-    $play.title = isRunning ? 'Pause' : 'Start';
 
-    // Extra button (lap for stopwatch, skip for pomodoro)
+    // Extra button
     if (currentTab === 'stopwatch') {
       $extra.style.display = 'flex';
       $extra.innerHTML = ICONS.lap;
@@ -410,47 +248,65 @@
       $extra.style.display = 'none';
     }
 
-    // Compact mode: smooth CSS-only collapse
+    // Compact mode
     root.querySelectorAll('.pt-collapsible').forEach(el => {
       el.classList.toggle('pt-collapsed', isRunning);
     });
-
-    // Close panel when entering compact mode
     if (isRunning && panelOpen) {
       panelOpen = false;
       $panel.classList.remove('open');
     }
-
-    // When not running, restore tab visibility based on feature settings
-    if (!isRunning) {
-      applySettings();
-    }
-
-    // Reset button: always show
+    if (!isRunning) applySettings();
     $reset.style.display = 'flex';
-
-    // Time display
-    if (!isRunning) {
-      let ms = 0;
-      if (currentTab === 'stopwatch') ms = sw.elapsed;
-      else if (currentTab === 'countdown') ms = cd.remain;
-      else if (currentTab === 'sps') ms = sps.elapsed;
-      else ms = pomo.remain;
-      renderTime(ms, false);
-    }
   }
 
+  // ============ POLLING LOOP ============
+  let pollInterval = null;
+  function startPolling() {
+    if (pollInterval) return;
+    pollInterval = setInterval(async () => {
+      const snap = await sendBg({ type: 'PT_GET_STATE' });
+      if (snap) renderSnapshot(snap);
+    }, 50);
+  }
+  function stopPolling() {
+    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
+  }
+
+  // Smart polling: fast when running, slow when idle
+  let smartPollInterval = null;
+  function startSmartPolling() {
+    if (smartPollInterval) clearInterval(smartPollInterval);
+    smartPollInterval = setInterval(async () => {
+      const snap = await sendBg({ type: 'PT_GET_STATE' });
+      if (!snap) return;
+      renderSnapshot(snap);
+
+      const isRunning = snap.swRunning || snap.cdRunning || snap.spsRunning || snap.pomoRunning;
+      // Dynamic poll rate
+      const targetRate = isRunning ? 50 : 1000;
+      if (smartPollInterval && smartPollInterval._rate !== targetRate) {
+        clearInterval(smartPollInterval);
+        smartPollInterval = setInterval(arguments.callee, targetRate);
+        smartPollInterval._rate = targetRate;
+      }
+    }, 200);
+    smartPollInterval._rate = 200;
+  }
+
+  // ============ PANEL CONTENT ============
   function updatePanel() {
-    if (!panelOpen) return;
+    if (!panelOpen || !lastState) return;
+    const snap = lastState;
 
     if (currentTab === 'stopwatch') {
       let lapsHTML = '';
-      if (sw.laps.length) {
+      if (snap.swLaps && snap.swLaps.length) {
         let total = 0;
         lapsHTML = '<div class="pt-laps">';
-        for (let i = sw.laps.length - 1; i >= 0; i--) {
-          total = sw.laps.slice(0, i + 1).reduce((a, b) => a + b, 0);
-          lapsHTML += `<div class="pt-lap-item"><span>#${i + 1}</span><span>${fmtTime(sw.laps[i])}.${fmtMs(sw.laps[i])}</span><span>${fmtTime(total)}</span></div>`;
+        for (let i = snap.swLaps.length - 1; i >= 0; i--) {
+          total = snap.swLaps.slice(0, i + 1).reduce((a, b) => a + b, 0);
+          lapsHTML += `<div class="pt-lap-item"><span>#${i + 1}</span><span>${fmtTime(snap.swLaps[i])}.${fmtMs(snap.swLaps[i])}</span><span>${fmtTime(total)}</span></div>`;
         }
         lapsHTML += '</div>';
       }
@@ -460,9 +316,9 @@
     }
 
     else if (currentTab === 'countdown') {
-      const curH = Math.floor((cd.total / 1000) / 3600);
-      const curM = Math.floor(((cd.total / 1000) % 3600) / 60);
-      const curS = Math.floor((cd.total / 1000) % 60);
+      const curH = Math.floor((snap.cdTotal / 1000) / 3600);
+      const curM = Math.floor(((snap.cdTotal / 1000) % 3600) / 60);
+      const curS = Math.floor((snap.cdTotal / 1000) % 60);
       $panelContent.innerHTML = `
         <div class="pt-section-title">Countdown Timer</div>
         <div class="pt-info-text">Choose a quick preset or set a custom duration below. The timer will notify you when it reaches zero.</div>
@@ -481,41 +337,40 @@
         </div>
         <button class="pt-action-btn" id="ptCdSet">Set & Start Countdown</button>`;
 
-      // Preset clicks
       $panelContent.querySelectorAll('.pt-preset').forEach(btn => {
         btn.addEventListener('click', (e) => {
           e.stopPropagation();
           const sec = parseInt(btn.dataset.sec);
           $panelContent.querySelectorAll('.pt-preset').forEach(b => b.classList.remove('active'));
           btn.classList.add('active');
-          const h = Math.floor(sec / 3600);
-          const m = Math.floor((sec % 3600) / 60);
-          const s = sec % 60;
-          root.querySelector('#ptCdH').value = h;
-          root.querySelector('#ptCdM').value = m;
-          root.querySelector('#ptCdS').value = s;
+          root.querySelector('#ptCdH').value = Math.floor(sec / 3600);
+          root.querySelector('#ptCdM').value = Math.floor((sec % 3600) / 60);
+          root.querySelector('#ptCdS').value = sec % 60;
         });
       });
 
-      root.querySelector('#ptCdSet').addEventListener('click', (e) => {
+      root.querySelector('#ptCdSet').addEventListener('click', async (e) => {
         e.stopPropagation();
-        cd.total = getCountdownInputMs();
-        cd.remain = cd.total;
-        if (cd.total > 0) {
+        const h = parseInt(root.querySelector('#ptCdH').value) || 0;
+        const m = parseInt(root.querySelector('#ptCdM').value) || 0;
+        const s = parseInt(root.querySelector('#ptCdS').value) || 0;
+        const totalMs = (h * 3600 + m * 60 + s) * 1000;
+        if (totalMs > 0) {
           panelOpen = false;
           $panel.classList.remove('open');
-          toggleCountdown();
+          const snap = await sendBg({ type: 'PT_SET_COUNTDOWN', totalMs });
+          if (snap) renderSnapshot(snap);
         }
       });
     }
 
     else if (currentTab === 'sps') {
-      const resultHTML = sps.lastResult ? `
+      const resultHTML = snap.spsLastResult ? `
         <div class="pt-sps-result">
-          <span class="pt-sps-value">${sps.lastResult.sps.toFixed(3)}</span>
+          <span class="pt-sps-value">${snap.spsLastResult.sps.toFixed(3)}</span>
           <span class="pt-sps-unit">sentences/sec</span>
         </div>
-        <div class="pt-sps-detail">${sps.lastResult.sentences} sentences in ${sps.lastResult.seconds.toFixed(1)}s</div>
+        <div class="pt-sps-detail">${snap.spsLastResult.sentences} sentences in ${snap.spsLastResult.seconds.toFixed(1)}s</div>
       ` : '';
 
       $panelContent.innerHTML = `
@@ -523,60 +378,101 @@
         <div class="pt-info-text">Calculate your reading or typing speed. Use the <b>Start (▶)</b> button on the main bar to measure time automatically, or enter the values manually.</div>
         <div class="pt-input-row" style="margin-bottom:12px">
           <div class="pt-input-group"><input type="number" id="ptSpsCount" placeholder="Sentences" min="0"></div>
-          <div class="pt-input-group"><input type="number" id="ptSpsSecs" placeholder="Seconds" min="0" step="0.1" value="${sps.elapsed > 0 ? (sps.elapsed / 1000).toFixed(1) : ''}"></div>
+          <div class="pt-input-group"><input type="number" id="ptSpsSecs" placeholder="Seconds" min="0" step="0.1" value="${snap.spsElapsed > 0 ? (snap.spsElapsed / 1000).toFixed(1) : ''}"></div>
         </div>
         <button class="pt-action-btn" id="ptSpsCalc">Calculate Speed</button>
         ${resultHTML}`;
 
-      root.querySelector('#ptSpsCalc').addEventListener('click', (e) => {
+      root.querySelector('#ptSpsCalc').addEventListener('click', async (e) => {
         e.stopPropagation();
-        calcSps();
+        const sentences = parseFloat(root.querySelector('#ptSpsCount')?.value);
+        let seconds;
+        if (snap.spsElapsed > 0) seconds = snap.spsElapsed / 1000;
+        else seconds = parseFloat(root.querySelector('#ptSpsSecs')?.value);
+        if (!sentences || !seconds || seconds <= 0) return;
+        const result = { sentences, seconds, sps: sentences / seconds };
+        const s = await sendBg({ type: 'PT_CALC_SPS', result });
+        if (s) { lastState = s; updatePanel(); }
       });
     }
 
     else if (currentTab === 'pomodoro') {
       let dotsHTML = '';
-      for (let i = 0; i < pomo.sessions; i++) {
-        const cls = i < pomo.currentNum - 1 ? 'done' : i === pomo.currentNum - 1 ? 'active' : '';
+      for (let i = 0; i < snap.pomoSessions; i++) {
+        const cls = i < snap.pomoCurrentNum - 1 ? 'done' : i === snap.pomoCurrentNum - 1 ? 'active' : '';
         dotsHTML += `<div class="pt-pomo-dot ${cls}"></div>`;
       }
       $panelContent.innerHTML = `
         <div class="pt-section-title">Pomodoro Timer</div>
         <div class="pt-info-text">Improve your productivity with focus sessions. The bar shows your current progress. You can skip any session with the <b>Skip (⏭)</b> button.</div>
         <div class="pt-pomo-dots">${dotsHTML}</div>
-        <div class="pt-pomo-label">${pomo.isFocus ? `<span>Focus</span> ${pomo.currentNum}/${pomo.sessions}` : `<span>Break</span> ${pomo.currentNum - 1}/${pomo.sessions}`}</div>
+        <div class="pt-pomo-label">${snap.pomoIsFocus ? `<span>Focus</span> ${snap.pomoCurrentNum}/${snap.pomoSessions}` : `<span>Break</span> ${snap.pomoCurrentNum - 1}/${snap.pomoSessions}`}</div>
         <div style="margin-top:20px">
           <div class="pt-section-title">Pomodoro Settings</div>
           <div class="pt-input-row" style="margin-bottom:12px">
-            <div class="pt-input-group"><input type="number" id="ptPomoF" value="${pomo.focusMin}" min="1" max="90"><span class="pt-unit">focus</span></div>
-            <div class="pt-input-group"><input type="number" id="ptPomoS" value="${pomo.shortMin}" min="1" max="30"><span class="pt-unit">short</span></div>
-            <div class="pt-input-group"><input type="number" id="ptPomoL" value="${pomo.longMin}" min="1" max="60"><span class="pt-unit">long</span></div>
+            <div class="pt-input-group"><input type="number" id="ptPomoF" value="${snap.pomoFocusMin}" min="1" max="90"><span class="pt-unit">focus</span></div>
+            <div class="pt-input-group"><input type="number" id="ptPomoS" value="${snap.pomoShortMin}" min="1" max="30"><span class="pt-unit">short</span></div>
+            <div class="pt-input-group"><input type="number" id="ptPomoL" value="${snap.pomoLongMin}" min="1" max="60"><span class="pt-unit">long</span></div>
           </div>
           <button class="pt-action-btn" id="ptPomoApply">Update Settings & Reset</button>
         </div>`;
 
-      root.querySelector('#ptPomoApply')?.addEventListener('click', (e) => {
+      root.querySelector('#ptPomoApply')?.addEventListener('click', async (e) => {
         e.stopPropagation();
-        pomo.focusMin = parseInt(root.querySelector('#ptPomoF').value) || 25;
-        pomo.shortMin = parseInt(root.querySelector('#ptPomoS').value) || 5;
-        pomo.longMin = parseInt(root.querySelector('#ptPomoL').value) || 15;
-        resetPomodoro();
+        const snap2 = await sendBg({
+          type: 'PT_SET_POMO_SETTINGS',
+          focusMin: parseInt(root.querySelector('#ptPomoF').value) || 25,
+          shortMin: parseInt(root.querySelector('#ptPomoS').value) || 5,
+          longMin: parseInt(root.querySelector('#ptPomoL').value) || 15,
+          sessions: snap.pomoSessions,
+        });
+        if (snap2) renderSnapshot(snap2);
+        updatePanel();
       });
     }
   }
 
-  // Prevent bar clicks from bubbling
   $bar.addEventListener('click', (e) => e.stopPropagation());
   $panel.addEventListener('click', (e) => e.stopPropagation());
   $panel.addEventListener('mousedown', (e) => e.stopPropagation());
 
-  // ============ SETTINGS LISTENERS ============
+  // ============ SETTINGS ============
+  function applySettings() {
+    const scale = settings.uiScale / 100;
+    root.style.transform = scale === 1 ? '' : `scale(${scale})`;
+    root.style.transformOrigin = 'top left';
+    root.style.opacity = settings.uiOpacity / 100;
+
+    if (!settings.autoShow) {
+      root.classList.add('pt-hidden');
+      root.classList.remove('pt-visible');
+    }
+
+    const featureMap = {
+      stopwatch: settings.featStopwatch,
+      countdown: settings.featCountdown,
+      sps: settings.featSps,
+      pomodoro: settings.featPomodoro,
+    };
+    root.querySelectorAll('.pt-tab-btn').forEach(btn => {
+      btn.classList.toggle('pt-feat-hidden', featureMap[btn.dataset.tab] === false);
+    });
+
+    if (featureMap[currentTab] === false) {
+      const first = Object.keys(featureMap).find(k => featureMap[k] !== false);
+      if (first) {
+        currentTab = first;
+        sendBg({ type: 'PT_SET_TAB', tab: currentTab });
+        root.querySelectorAll('.pt-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
+      }
+    }
+  }
+
+  // ============ MESSAGE LISTENERS ============
   chrome.runtime.onMessage.addListener((msg) => {
     if (msg.type === 'TOGGLE_PRODOTIME') {
       root.classList.toggle('pt-hidden');
-      if (!root.classList.contains('pt-hidden')) {
-        root.classList.add('pt-visible');
-      }
+      if (!root.classList.contains('pt-hidden')) root.classList.add('pt-visible');
     }
     if (msg.type === 'PT_SETTINGS_UPDATED') {
       Object.assign(settings, msg.settings);
@@ -589,76 +485,20 @@
     }
   });
 
-  function applySettings() {
-    // Scale
-    const scale = settings.uiScale / 100;
-    root.style.transform = scale === 1 ? '' : `scale(${scale})`;
-    root.style.transformOrigin = 'top left';
+  // ============ INIT ============
+  chrome.storage.sync.get(SETTINGS_DEFAULTS, (data) => {
+    Object.assign(settings, data);
+    applySettings();
 
-    // Opacity
-    root.style.opacity = settings.uiOpacity / 100;
-
-    // Auto Show
-    if (!settings.autoShow) {
-      root.classList.add('pt-hidden');
-      root.classList.remove('pt-visible');
-    }
-
-    // Feature toggles — hide/show tab buttons
-    const featureMap = {
-      stopwatch: settings.featStopwatch,
-      countdown: settings.featCountdown,
-      sps: settings.featSps,
-      pomodoro: settings.featPomodoro,
-    };
-    root.querySelectorAll('.pt-tab-btn').forEach(btn => {
-      const enabled = featureMap[btn.dataset.tab] !== false;
-      btn.classList.toggle('pt-feat-hidden', !enabled);
-    });
-
-    // If current tab is disabled, switch to first enabled
-    if (!featureMap[currentTab]) {
-      const firstEnabled = Object.keys(featureMap).find(k => featureMap[k]);
-      if (firstEnabled) {
-        currentTab = firstEnabled;
-        root.querySelectorAll('.pt-tab-btn').forEach(b => {
-          b.classList.toggle('active', b.dataset.tab === currentTab);
-        });
-        stopAll();
-        updateDisplay();
+    // Get initial state from background
+    sendBg({ type: 'PT_GET_STATE' }).then((snap) => {
+      if (snap) {
+        renderSnapshot(snap);
         if (panelOpen) updatePanel();
       }
-    }
-
-    // Pomodoro defaults (only if not running)
-    if (!pomo.running) {
-      pomo.focusMin = settings.pomoFocus;
-      pomo.shortMin = settings.pomoShort;
-      pomo.longMin = settings.pomoLong;
-      pomo.sessions = settings.pomoSessions;
-    }
-  }
-
-  // ============ INIT ============
-  chrome.storage.sync.get(DEFAULTS, (data) => {
-    Object.assign(settings, data);
-    currentTab = settings.defaultTab || 'stopwatch';
-
-    // Set active tab button
-    root.querySelectorAll('.pt-tab-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.tab === currentTab);
+      // Start smart polling
+      startSmartPolling();
     });
-
-    // Apply pomodoro defaults
-    pomo.focusMin = settings.pomoFocus;
-    pomo.shortMin = settings.pomoShort;
-    pomo.longMin = settings.pomoLong;
-    pomo.sessions = settings.pomoSessions;
-    pomo.total = pomo.focusMin * 60 * 1000;
-    pomo.remain = pomo.total;
-
-    applySettings();
-    updateDisplay();
   });
 
 })();

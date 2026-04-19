@@ -20,6 +20,46 @@ const DEFAULTS = {
 
 const $ = (id) => document.getElementById(id);
 
+// ---- Timer Status ----
+const pad = (n) => String(Math.floor(n)).padStart(2, '0');
+function fmtTime(ms) {
+  const s = Math.floor(ms / 1000);
+  const m = Math.floor(s / 60);
+  const h = Math.floor(m / 60);
+  if (h > 0) return `${pad(h)}:${pad(m % 60)}:${pad(s % 60)}`;
+  return `${pad(m % 60)}:${pad(s % 60)}`;
+}
+
+const TAB_NAMES = { stopwatch: 'Stopwatch', countdown: 'Countdown', sps: 'SPS', pomodoro: 'Pomodoro' };
+
+function updateTimerStatus() {
+  chrome.runtime.sendMessage({ type: 'PT_GET_STATE' }, (snap) => {
+    if (chrome.runtime.lastError || !snap) return;
+    const dot = $('statusDot');
+    const label = $('statusLabel');
+    const time = $('statusTime');
+
+    const isRunning = snap.swRunning || snap.cdRunning || snap.spsRunning || snap.pomoRunning;
+    dot.classList.toggle('running', isRunning);
+
+    const tab = snap.currentTab;
+    if (isRunning) {
+      label.textContent = `${TAB_NAMES[tab] || tab} — Running`;
+      let ms = 0;
+      if (tab === 'stopwatch') ms = snap.swElapsed;
+      else if (tab === 'countdown') ms = snap.cdRemain;
+      else if (tab === 'sps') ms = snap.spsElapsed;
+      else ms = snap.pomoRemain;
+      time.textContent = fmtTime(ms);
+    } else {
+      label.textContent = 'Idle';
+      time.textContent = '';
+    }
+  });
+}
+
+let statusPoll = null;
+
 // ---- Load Settings ----
 async function loadSettings() {
   const data = await chrome.storage.sync.get(DEFAULTS);
@@ -70,6 +110,8 @@ function showStatus(msg) {
 // ---- Event Listeners ----
 document.addEventListener('DOMContentLoaded', () => {
   loadSettings();
+  updateTimerStatus();
+  statusPoll = setInterval(updateTimerStatus, 200);
 
   // Toggle: Auto Show
   $('autoShow').addEventListener('change', (e) => {

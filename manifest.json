@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ProdoTime",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "description": "Floating productivity timer overlay — Stopwatch, Countdown, SPS Calculator & Pomodoro.",
   "permissions": ["storage", "activeTab"],
   "action": {
