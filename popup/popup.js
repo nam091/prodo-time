@@ -6,6 +6,10 @@ const DEFAULTS = {
   autoShow: true,
   uiScale: 100,
   uiOpacity: 100,
+  featStopwatch: true,
+  featCountdown: true,
+  featSps: true,
+  featPomodoro: true,
   pomoFocus: 25,
   pomoShort: 5,
   pomoLong: 15,
@@ -25,6 +29,12 @@ async function loadSettings() {
   $('scaleValue').textContent = data.uiScale + '%';
   $('uiOpacity').value = data.uiOpacity;
   $('opacityValue').textContent = data.uiOpacity + '%';
+
+  $('featStopwatch').checked = data.featStopwatch;
+  $('featCountdown').checked = data.featCountdown;
+  $('featSps').checked = data.featSps;
+  $('featPomodoro').checked = data.featPomodoro;
+
   $('pomoFocus').value = data.pomoFocus;
   $('pomoShort').value = data.pomoShort;
   $('pomoLong').value = data.pomoLong;
@@ -80,6 +90,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
   $('uiOpacity').addEventListener('change', (e) => {
     save('uiOpacity', parseInt(e.target.value));
+  });
+
+  // Feature toggles
+  ['featStopwatch', 'featCountdown', 'featSps', 'featPomodoro'].forEach((id) => {
+    $(id).addEventListener('change', (e) => {
+      save(id, e.target.checked);
+    });
   });
 
   // Pomodoro defaults

@@ -35,6 +35,7 @@
   // ============ SETTINGS ============
   const DEFAULTS = {
     autoShow: true, uiScale: 100, uiOpacity: 100,
+    featStopwatch: true, featCountdown: true, featSps: true, featPomodoro: true,
     pomoFocus: 25, pomoShort: 5, pomoLong: 15, pomoSessions: 4,
     soundAlert: true, defaultTab: 'stopwatch',
   };
@@ -396,9 +397,9 @@
     $play.className = `pt-ctrl-btn ${isRunning ? 'pause' : 'play'}`;
     $play.title = isRunning ? 'Pause' : 'Start';
 
-    // Extra button
+    // Extra button (lap for stopwatch, skip for pomodoro)
     if (currentTab === 'stopwatch') {
-      $extra.style.display = sw.running ? 'flex' : 'none';
+      $extra.style.display = 'flex';
       $extra.innerHTML = ICONS.lap;
       $extra.title = 'Lap';
     } else if (currentTab === 'pomodoro') {
@@ -406,8 +407,24 @@
       $extra.innerHTML = ICONS.skip;
       $extra.title = 'Skip';
     } else {
-      $extra.style.display = 'none';
+      $extra.style.display = isRunning ? 'none' : 'none';
     }
+
+    // Compact mode: when running, hide everything except time + pause + extra + reset
+    const compactEls = root.querySelectorAll('.pt-drag, .pt-divider, .pt-tab-btn, #ptExpand, #ptClose');
+    compactEls.forEach(el => {
+      el.style.display = isRunning ? 'none' : '';
+    });
+
+    // When not running, restore tab visibility based on feature settings
+    if (!isRunning) {
+      applySettings();
+    }
+
+    // Reset button: always show (to stop/reset)
+    $reset.style.display = 'flex';
+    $reset.innerHTML = ICONS.reset;
+    $reset.title = 'Reset';
 
     // Time display
     if (!isRunning) {
@@ -582,6 +599,32 @@
     if (!settings.autoShow) {
       root.classList.add('pt-hidden');
       root.classList.remove('pt-visible');
+    }
+
+    // Feature toggles — hide/show tab buttons + associated dividers
+    const featureMap = {
+      stopwatch: settings.featStopwatch,
+      countdown: settings.featCountdown,
+      sps: settings.featSps,
+      pomodoro: settings.featPomodoro,
+    };
+    root.querySelectorAll('.pt-tab-btn').forEach(btn => {
+      const enabled = featureMap[btn.dataset.tab] !== false;
+      btn.style.display = enabled ? 'flex' : 'none';
+    });
+
+    // If current tab is disabled, switch to first enabled
+    if (!featureMap[currentTab]) {
+      const firstEnabled = Object.keys(featureMap).find(k => featureMap[k]);
+      if (firstEnabled) {
+        currentTab = firstEnabled;
+        root.querySelectorAll('.pt-tab-btn').forEach(b => {
+          b.classList.toggle('active', b.dataset.tab === currentTab);
+        });
+        stopAll();
+        updateDisplay();
+        if (panelOpen) updatePanel();
+      }
     }
 
     // Pomodoro defaults (only if not running)
