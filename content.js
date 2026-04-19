@@ -68,28 +68,28 @@
 
   root.innerHTML = `
     <div class="pt-bar" id="ptBar">
-      <div class="pt-drag pt-collapsible" id="ptDrag">${ICONS.grip}</div>
-      <div class="pt-divider pt-collapsible"></div>
+      <div class="pt-drag" id="ptDrag">${ICONS.grip}</div>
+      <div class="pt-divider"></div>
 
-      <button class="pt-tab-btn pt-collapsible active" data-tab="stopwatch" title="Stopwatch">${ICONS.stopwatch}</button>
-      <button class="pt-tab-btn pt-collapsible" data-tab="countdown" title="Countdown">${ICONS.timer}</button>
-      <button class="pt-tab-btn pt-collapsible" data-tab="sps" title="SPS Calculator">${ICONS.zap}</button>
-      <button class="pt-tab-btn pt-collapsible" data-tab="pomodoro" title="Pomodoro">${ICONS.tomato}</button>
+      <button class="pt-tab-btn active" data-tab="stopwatch" title="Stopwatch">${ICONS.stopwatch}</button>
+      <button class="pt-tab-btn" data-tab="countdown" title="Countdown">${ICONS.timer}</button>
+      <button class="pt-tab-btn" data-tab="sps" title="SPS Calculator">${ICONS.zap}</button>
+      <button class="pt-tab-btn" data-tab="pomodoro" title="Pomodoro">${ICONS.tomato}</button>
 
-      <div class="pt-divider pt-collapsible"></div>
+      <div class="pt-divider"></div>
 
       <div class="pt-time-display" id="ptTimeDisplay">00:00<span class="pt-ms">.00</span></div>
 
-      <div class="pt-divider pt-collapsible pt-right-collapse"></div>
+      <div class="pt-divider"></div>
 
       <button class="pt-ctrl-btn play" id="ptPlay" title="Start">${ICONS.play}</button>
       <button class="pt-ctrl-btn" id="ptReset" title="Reset">${ICONS.reset}</button>
       <button class="pt-ctrl-btn" id="ptExtra" title="Lap" style="display:none">${ICONS.lap}</button>
 
-      <div class="pt-divider pt-collapsible pt-right-collapse"></div>
+      <div class="pt-divider"></div>
 
-      <button class="pt-ctrl-btn pt-collapsible pt-right-collapse" id="ptExpand" title="Expand">${ICONS.chevDown}</button>
-      <button class="pt-close pt-collapsible pt-right-collapse" id="ptClose" title="Hide">${ICONS.x}</button>
+      <button class="pt-ctrl-btn" id="ptExpand" title="Expand">${ICONS.chevDown}</button>
+      <button class="pt-close" id="ptClose" title="Hide">${ICONS.x}</button>
     </div>
 
     <div class="pt-panel" id="ptPanel">
@@ -248,10 +248,10 @@
       $extra.style.display = 'none';
     }
 
-    // Compact mode
-    root.querySelectorAll('.pt-collapsible').forEach(el => {
-      el.classList.toggle('pt-collapsed', isRunning);
-    });
+    // Compact mode: simple hide/show
+    const hideEls = root.querySelectorAll('.pt-drag, .pt-divider, .pt-tab-btn, #ptExpand, #ptClose');
+    hideEls.forEach(el => { el.style.display = isRunning ? 'none' : ''; });
+
     if (isRunning && panelOpen) {
       panelOpen = false;
       $panel.classList.remove('open');
