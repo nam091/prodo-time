@@ -16,12 +16,12 @@
   --pt-green: #34d399;
   --pt-orange: #fb923c;
   --pt-red: #f87171;
-  --pt-radius: 20px;
-  --pt-radius-sm: 12px;
+  --pt-radius: 24px;
+  --pt-radius-sm: 14px;
   --pt-blur: 40px;
   --pt-shadow:
-    0 8px 32px rgba(0,0,0,0.45),
-    0 2px 8px rgba(0,0,0,0.25),
+    0 10px 40px rgba(0,0,0,0.45),
+    0 3px 12px rgba(0,0,0,0.25),
     inset 0 1px 0 rgba(255,255,255,0.12);
   --pt-font: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Inter', 'Segoe UI', system-ui, sans-serif;
   --pt-mono: 'SF Mono', 'Cascadia Code', 'Consolas', 'Menlo', monospace;
@@ -30,7 +30,7 @@
   position: fixed;
   z-index: 2147483647;
   font-family: var(--pt-font);
-  font-size: 13px;
+  font-size: 15.5px;
   line-height: 1.4;
   color: var(--pt-text);
   user-select: none;
@@ -48,8 +48,8 @@
 .pt-bar {
   display: flex;
   align-items: center;
-  gap: 3px;
-  padding: 6px 10px;
+  gap: 4px;
+  padding: 7px 12px;
   background: var(--pt-bg);
   backdrop-filter: blur(var(--pt-blur)) saturate(1.8);
   -webkit-backdrop-filter: blur(var(--pt-blur)) saturate(1.8);
@@ -67,7 +67,7 @@
 
 .pt-bar.dragging {
   cursor: grabbing;
-  box-shadow: 0 16px 48px rgba(0,0,0,0.5), 0 4px 12px rgba(0,0,0,0.3);
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 5px 15px rgba(0,0,0,0.3);
 }
 
 /* ---- Drag Handle ---- */
@@ -75,8 +75,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 20px;
-  height: 28px;
+  width: 24px;
+  height: 34px;
   flex-shrink: 0;
   opacity: 0.35;
   cursor: grab;
@@ -86,17 +86,17 @@
 .pt-drag:hover { opacity: 0.7; }
 
 .pt-drag svg {
-  width: 12px;
-  height: 12px;
+  width: 14px;
+  height: 14px;
 }
 
 /* ---- Divider ---- */
 .pt-divider {
   width: 1px;
-  height: 20px;
+  height: 24px;
   background: var(--pt-border);
   flex-shrink: 0;
-  margin: 0 3px;
+  margin: 0 4px;
 }
 
 /* ---- Tab Buttons ---- */
@@ -104,8 +104,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
+  width: 38px;
+  height: 38px;
   border: none;
   border-radius: var(--pt-radius-sm);
   background: transparent;
@@ -118,8 +118,8 @@
 }
 
 .pt-tab-btn svg {
-  width: 16px;
-  height: 16px;
+  width: 19px;
+  height: 19px;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
   transition: transform var(--pt-transition);
 }
@@ -141,10 +141,10 @@
 .pt-tab-btn.active::after {
   content: '';
   position: absolute;
-  bottom: 3px;
+  bottom: 4px;
   left: 50%;
   transform: translateX(-50%);
-  width: 12px;
+  width: 14px;
   height: 2px;
   background: var(--pt-accent);
   border-radius: 1px;
@@ -153,11 +153,11 @@
 /* ---- Timer Display ---- */
 .pt-time-display {
   font-family: var(--pt-mono);
-  font-size: 18px;
+  font-size: 21.5px;
   font-weight: 600;
   letter-spacing: -0.5px;
-  padding: 0 10px;
-  min-width: 90px;
+  padding: 0 12px;
+  min-width: 108px;
   text-align: center;
   color: var(--pt-text);
   flex-shrink: 0;
@@ -171,7 +171,7 @@
 }
 
 .pt-time-display .pt-ms {
-  font-size: 12px;
+  font-size: 14px;
   opacity: 0.5;
   font-weight: 400;
 }
@@ -181,8 +181,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 36px;
+  height: 36px;
   border: none;
   border-radius: 50%;
   background: rgba(255,255,255,0.08);
@@ -194,8 +194,8 @@
 }
 
 .pt-ctrl-btn svg {
-  width: 14px;
-  height: 14px;
+  width: 17px;
+  height: 17px;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
 }
 
@@ -229,9 +229,9 @@
 /* ============================================= */
 .pt-panel {
   position: absolute;
-  top: calc(100% + 10px);
+  top: calc(100% + 12px);
   left: 50%;
-  width: 360px;
+  width: 432px;
   padding: 0;
   background: var(--pt-bg-panel);
   backdrop-filter: blur(var(--pt-blur)) saturate(2);
@@ -240,7 +240,7 @@
   border-radius: var(--pt-radius);
   box-shadow: var(--pt-shadow);
   opacity: 0;
-  transform: translateX(-50%) translateY(-8px) scale(0.96);
+  transform: translateX(-50%) translateY(-10px) scale(0.96);
   pointer-events: none;
   transition: all 0.28s cubic-bezier(0.16, 1, 0.3, 1);
   overflow: hidden;
@@ -254,7 +254,7 @@
 
 /* Inner content wrapper — this is where the real padding lives */
 #ptPanelContent {
-  padding: 20px 22px;
+  padding: 24px 26px;
   overflow: hidden;
   word-wrap: break-word;
   overflow-wrap: break-word;
@@ -263,22 +263,22 @@
 /* ---- Section Titles ---- */
 .pt-section-title {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1.6px;
+  letter-spacing: 1.8px;
   color: var(--pt-text-muted);
-  margin: 0 0 16px 0;
+  margin: 0 0 19px 0;
   padding: 0;
 }
 
 /* ---- Info Text ---- */
 .pt-info-text {
   display: block;
-  font-size: 12.5px;
+  font-size: 15px;
   line-height: 1.65;
   color: var(--pt-text-dim);
-  margin: 0 0 20px 0;
+  margin: 0 0 24px 0;
   padding: 0;
   text-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
@@ -291,20 +291,20 @@
 /* ---- Countdown Presets ---- */
 .pt-presets {
   display: flex;
-  gap: 6px;
+  gap: 7px;
   flex-wrap: wrap;
-  margin: 0 0 18px 0;
+  margin: 0 0 22px 0;
   padding: 0;
 }
 
 .pt-preset {
-  padding: 7px 14px;
+  padding: 8.5px 17px;
   border: 1px solid var(--pt-border);
-  border-radius: 10px;
+  border-radius: 12px;
   background: rgba(255,255,255,0.04);
   color: var(--pt-text-dim);
   font-family: var(--pt-mono);
-  font-size: 12px;
+  font-size: 14.5px;
   font-weight: 500;
   cursor: pointer;
   transition: all var(--pt-transition);
@@ -326,7 +326,7 @@
 /* ---- Input Row ---- */
 .pt-input-row {
   display: flex;
-  gap: 6px;
+  gap: 7px;
   align-items: center;
   margin: 0;
   padding: 0;
@@ -335,21 +335,21 @@
 .pt-input-group {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 5px;
   flex: 1;
   min-width: 0;
 }
 
 .pt-input-group input {
   width: 100%;
-  min-width: 44px;
-  padding: 9px 4px;
+  min-width: 53px;
+  padding: 11px 5px;
   border: 1px solid var(--pt-border);
-  border-radius: 10px;
+  border-radius: 12px;
   background: rgba(0,0,0,0.3);
   color: var(--pt-text);
   font-family: var(--pt-mono);
-  font-size: 13px;
+  font-size: 15.5px;
   font-weight: 500;
   text-align: center;
   outline: none;
@@ -364,15 +364,15 @@
 .pt-input-group input::placeholder {
   color: var(--pt-text-muted);
   font-family: var(--pt-font);
-  font-size: 11px;
+  font-size: 13px;
 }
 
 .pt-input-group .pt-unit {
-  font-size: 9px;
+  font-size: 11px;
   color: var(--pt-text-muted);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
+  letter-spacing: 0.6px;
   flex-shrink: 0;
   white-space: nowrap;
 }
@@ -381,43 +381,43 @@
 .pt-sps-result {
   display: flex;
   align-items: baseline;
-  gap: 8px;
-  padding: 14px 0 6px;
+  gap: 10px;
+  padding: 17px 0 7px;
   margin: 0;
 }
 
 .pt-sps-value {
   font-family: var(--pt-mono);
-  font-size: 28px;
+  font-size: 33.5px;
   font-weight: 700;
   color: var(--pt-accent);
-  text-shadow: 0 0 16px var(--pt-accent-glow);
+  text-shadow: 0 0 19px var(--pt-accent-glow);
 }
 
 .pt-sps-unit {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--pt-text-muted);
   font-weight: 500;
 }
 
 .pt-sps-detail {
-  font-size: 11px;
+  font-size: 13px;
   color: var(--pt-text-dim);
-  margin: 4px 0 0 0;
+  margin: 5px 0 0 0;
   padding: 0;
 }
 
 /* ---- Pomodoro Dots ---- */
 .pt-pomo-dots {
   display: flex;
-  gap: 6px;
-  margin: 0 0 10px 0;
+  gap: 7px;
+  margin: 0 0 12px 0;
   padding: 0;
 }
 
 .pt-pomo-dot {
-  width: 10px;
-  height: 10px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: rgba(255,255,255,0.12);
   transition: all var(--pt-transition);
@@ -425,17 +425,17 @@
 
 .pt-pomo-dot.done {
   background: var(--pt-green);
-  box-shadow: 0 0 8px rgba(52,211,153,0.5);
+  box-shadow: 0 0 10px rgba(52,211,153,0.5);
 }
 
 .pt-pomo-dot.active {
   background: var(--pt-accent);
-  box-shadow: 0 0 8px var(--pt-accent-glow);
+  box-shadow: 0 0 10px var(--pt-accent-glow);
   transform: scale(1.3);
 }
 
 .pt-pomo-label {
-  font-size: 13px;
+  font-size: 15.5px;
   font-weight: 500;
   color: var(--pt-text-dim);
   margin: 0;
@@ -451,14 +451,14 @@
 .pt-action-btn {
   display: block;
   width: 100%;
-  padding: 11px;
-  margin: 16px 0 0 0;
+  padding: 13px;
+  margin: 19px 0 0 0;
   border: none;
-  border-radius: 12px;
+  border-radius: 14px;
   background: rgba(129,140,248,0.16);
   color: var(--pt-accent);
   font-family: var(--pt-font);
-  font-size: 13px;
+  font-size: 15.5px;
   font-weight: 600;
   cursor: pointer;
   transition: all var(--pt-transition);
@@ -477,20 +477,20 @@
 
 /* ---- Laps ---- */
 .pt-laps {
-  max-height: 140px;
+  max-height: 168px;
   overflow-y: auto;
-  margin: 10px 0 0 0;
+  margin: 12px 0 0 0;
   padding: 0;
 }
 
-.pt-laps::-webkit-scrollbar { width: 4px; }
-.pt-laps::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 4px; }
+.pt-laps::-webkit-scrollbar { width: 5px; }
+.pt-laps::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.12); border-radius: 5px; }
 
 .pt-lap-item {
   display: flex;
   justify-content: space-between;
-  padding: 5px 0;
-  font-size: 11px;
+  padding: 6px 0;
+  font-size: 13px;
   font-family: var(--pt-mono);
   color: var(--pt-text-dim);
   border-bottom: 1px solid rgba(255,255,255,0.05);
@@ -510,8 +510,8 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 26px;
-  height: 26px;
+  width: 31px;
+  height: 31px;
   border: none;
   border-radius: 50%;
   background: rgba(255,255,255,0.06);
@@ -523,8 +523,8 @@
 }
 
 .pt-close svg {
-  width: 12px;
-  height: 12px;
+  width: 14.5px;
+  height: 14.5px;
   filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
 }
 
@@ -537,15 +537,15 @@
 .pt-tab-btn[title]:hover::before {
   content: attr(title);
   position: absolute;
-  bottom: calc(100% + 8px);
+  bottom: calc(100% + 10px);
   left: 50%;
   transform: translateX(-50%);
-  padding: 5px 10px;
+  padding: 6px 12px;
   background: rgba(0,0,0,0.85);
   color: rgba(255,255,255,0.92);
-  font-size: 11px;
+  font-size: 13px;
   font-weight: 500;
-  border-radius: 6px;
+  border-radius: 7px;
   white-space: nowrap;
   pointer-events: none;
   z-index: 10;
@@ -553,7 +553,7 @@
 
 /* ---- Animation ---- */
 @keyframes pt-fadein {
-  from { opacity: 0; transform: translateY(8px) scale(0.96); }
+  from { opacity: 0; transform: translateY(10px) scale(0.96); }
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
