@@ -21,10 +21,19 @@ const DEFAULT_STATE = {
 let state = { ...DEFAULT_STATE };
 
 // ---- Load state on startup ----
+let stateReady = false;
+let pendingMessages = [];
+
 chrome.storage.local.get(TIMER_STATE_KEY, (data) => {
   if (data[TIMER_STATE_KEY]) {
     Object.assign(state, data[TIMER_STATE_KEY]);
   }
+  stateReady = true;
+  // Process any queued messages
+  pendingMessages.forEach(({ msg, sender, sendResponse }) => {
+    handleMessage(msg, sender, sendResponse);
+  });
+  pendingMessages = [];
 });
 
 function saveState() {
@@ -110,6 +119,14 @@ function getSnapshot() {
 
 // ---- Message handling ----
 chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
+  if (!stateReady) {
+    pendingMessages.push({ msg, sender, sendResponse });
+    return true; // keep channel open
+  }
+  return handleMessage(msg, sender, sendResponse);
+});
+
+function handleMessage(msg, sender, sendResponse) {
   switch (msg.type) {
     case 'PT_GET_STATE':
       sendResponse(getSnapshot());
@@ -137,7 +154,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
           state.cdRunning = false;
         } else {
           if (state.cdRemainAtStart <= 0) {
-            // Need to set from panel first
             sendResponse({ needsInput: true, ...getSnapshot() });
             return true;
           }
@@ -215,7 +231,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       state.pomoShortMin = msg.shortMin;
       state.pomoLongMin = msg.longMin;
       state.pomoSessions = msg.sessions || state.pomoSessions;
-      // Reset
       state.pomoRunning = false; state.pomoSession = 0;
       state.pomoTotal = state.pomoFocusMin * 60 * 1000;
       state.pomoRemainAtStart = state.pomoTotal;
@@ -232,7 +247,7 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
     default:
       return false;
   }
-});
+}
 
 function stopAll() {
   if (state.swRunning) { state.swElapsed = Date.now() - state.swStartTime; state.swRunning = false; }
