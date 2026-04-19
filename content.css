@@ -565,6 +565,30 @@
   display: none !important;
 }
 
+/* ---- Compact Mode Animation ---- */
+.pt-collapsible {
+  overflow: hidden;
+  transition: max-width 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1),
+              margin 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              padding 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  max-width: 50px;
+  opacity: 1;
+}
+
+.pt-collapsible.pt-collapsed {
+  max-width: 0 !important;
+  opacity: 0;
+  margin: 0 !important;
+  padding: 0 !important;
+  pointer-events: none;
+}
+
+/* Feature disabled — hidden but doesn't affect collapse animation */
+.pt-feat-hidden {
+  display: none !important;
+}
+
 /* Number input arrows */
 #prodotime-root input[type="number"]::-webkit-inner-spin-button,
 #prodotime-root input[type="number"]::-webkit-outer-spin-button {
@@ -574,3 +598,4 @@
 #prodotime-root input[type="number"] {
   -moz-appearance: textfield;
 }
+

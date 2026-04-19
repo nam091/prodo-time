@@ -75,28 +75,28 @@
   function buildHTML() {
     return `
     <div class="pt-bar" id="ptBar">
-      <div class="pt-drag" id="ptDrag">${ICONS.grip}</div>
-      <div class="pt-divider"></div>
+      <div class="pt-drag pt-collapsible" id="ptDrag">${ICONS.grip}</div>
+      <div class="pt-divider pt-collapsible"></div>
 
-      <button class="pt-tab-btn active" data-tab="stopwatch" title="Stopwatch">${ICONS.stopwatch}</button>
-      <button class="pt-tab-btn" data-tab="countdown" title="Countdown">${ICONS.timer}</button>
-      <button class="pt-tab-btn" data-tab="sps" title="SPS Calculator">${ICONS.zap}</button>
-      <button class="pt-tab-btn" data-tab="pomodoro" title="Pomodoro">${ICONS.tomato}</button>
+      <button class="pt-tab-btn pt-collapsible active" data-tab="stopwatch" title="Stopwatch">${ICONS.stopwatch}</button>
+      <button class="pt-tab-btn pt-collapsible" data-tab="countdown" title="Countdown">${ICONS.timer}</button>
+      <button class="pt-tab-btn pt-collapsible" data-tab="sps" title="SPS Calculator">${ICONS.zap}</button>
+      <button class="pt-tab-btn pt-collapsible" data-tab="pomodoro" title="Pomodoro">${ICONS.tomato}</button>
 
-      <div class="pt-divider"></div>
+      <div class="pt-divider pt-collapsible"></div>
 
       <div class="pt-time-display" id="ptTimeDisplay">00:00<span class="pt-ms">.00</span></div>
 
-      <div class="pt-divider"></div>
+      <div class="pt-divider pt-collapsible pt-right-collapse"></div>
 
       <button class="pt-ctrl-btn play" id="ptPlay" title="Start">${ICONS.play}</button>
       <button class="pt-ctrl-btn" id="ptReset" title="Reset">${ICONS.reset}</button>
       <button class="pt-ctrl-btn" id="ptExtra" title="Lap" style="display:none">${ICONS.lap}</button>
 
-      <div class="pt-divider"></div>
+      <div class="pt-divider pt-collapsible pt-right-collapse"></div>
 
-      <button class="pt-ctrl-btn" id="ptExpand" title="Expand">${ICONS.chevDown}</button>
-      <button class="pt-close" id="ptClose" title="Hide">${ICONS.x}</button>
+      <button class="pt-ctrl-btn pt-collapsible pt-right-collapse" id="ptExpand" title="Expand">${ICONS.chevDown}</button>
+      <button class="pt-close pt-collapsible pt-right-collapse" id="ptClose" title="Hide">${ICONS.x}</button>
     </div>
 
     <!-- Expandable Panel -->
@@ -407,24 +407,27 @@
       $extra.innerHTML = ICONS.skip;
       $extra.title = 'Skip';
     } else {
-      $extra.style.display = isRunning ? 'none' : 'none';
+      $extra.style.display = 'none';
     }
 
-    // Compact mode: when running, hide everything except time + pause + extra + reset
-    const compactEls = root.querySelectorAll('.pt-drag, .pt-divider, .pt-tab-btn, #ptExpand, #ptClose');
-    compactEls.forEach(el => {
-      el.style.display = isRunning ? 'none' : '';
+    // Compact mode: animate collapse/expand of side elements
+    root.querySelectorAll('.pt-collapsible').forEach(el => {
+      el.classList.toggle('pt-collapsed', isRunning);
     });
+
+    // Close panel when entering compact mode
+    if (isRunning && panelOpen) {
+      panelOpen = false;
+      $panel.classList.remove('open');
+    }
 
     // When not running, restore tab visibility based on feature settings
     if (!isRunning) {
       applySettings();
     }
 
-    // Reset button: always show (to stop/reset)
+    // Reset button: always show
     $reset.style.display = 'flex';
-    $reset.innerHTML = ICONS.reset;
-    $reset.title = 'Reset';
 
     // Time display
     if (!isRunning) {
@@ -601,7 +604,7 @@
       root.classList.remove('pt-visible');
     }
 
-    // Feature toggles — hide/show tab buttons + associated dividers
+    // Feature toggles — hide/show tab buttons
     const featureMap = {
       stopwatch: settings.featStopwatch,
       countdown: settings.featCountdown,
@@ -610,7 +613,7 @@
     };
     root.querySelectorAll('.pt-tab-btn').forEach(btn => {
       const enabled = featureMap[btn.dataset.tab] !== false;
-      btn.style.display = enabled ? 'flex' : 'none';
+      btn.classList.toggle('pt-feat-hidden', !enabled);
     });
 
     // If current tab is disabled, switch to first enabled
