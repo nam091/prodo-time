@@ -262,37 +262,13 @@
   }
 
   // ============ POLLING LOOP ============
-  let pollInterval = null;
+  let pollTimer = null;
   function startPolling() {
-    if (pollInterval) return;
-    pollInterval = setInterval(async () => {
+    if (pollTimer) return;
+    pollTimer = setInterval(async () => {
       const snap = await sendBg({ type: 'PT_GET_STATE' });
       if (snap) renderSnapshot(snap);
     }, 50);
-  }
-  function stopPolling() {
-    if (pollInterval) { clearInterval(pollInterval); pollInterval = null; }
-  }
-
-  // Smart polling: fast when running, slow when idle
-  let smartPollInterval = null;
-  function startSmartPolling() {
-    if (smartPollInterval) clearInterval(smartPollInterval);
-    smartPollInterval = setInterval(async () => {
-      const snap = await sendBg({ type: 'PT_GET_STATE' });
-      if (!snap) return;
-      renderSnapshot(snap);
-
-      const isRunning = snap.swRunning || snap.cdRunning || snap.spsRunning || snap.pomoRunning;
-      // Dynamic poll rate
-      const targetRate = isRunning ? 50 : 1000;
-      if (smartPollInterval && smartPollInterval._rate !== targetRate) {
-        clearInterval(smartPollInterval);
-        smartPollInterval = setInterval(arguments.callee, targetRate);
-        smartPollInterval._rate = targetRate;
-      }
-    }, 200);
-    smartPollInterval._rate = 200;
   }
 
   // ============ PANEL CONTENT ============
@@ -498,7 +474,7 @@
         if (panelOpen) updatePanel();
       }
       // Start smart polling
-      startSmartPolling();
+      startPolling();
     });
   });
 

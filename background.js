@@ -116,8 +116,6 @@ chrome.runtime.onMessage.addListener((msg, sender, sendResponse) => {
       return true;
 
     case 'PT_SET_TAB':
-      // Stop all timers when switching tabs
-      stopAll();
       state.currentTab = msg.tab;
       saveState();
       sendResponse(getSnapshot());
