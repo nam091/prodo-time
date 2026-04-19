@@ -32,6 +32,14 @@
   };
   const fmtMs = (ms) => pad(Math.floor((ms % 1000) / 10));
 
+  // ============ SETTINGS ============
+  const DEFAULTS = {
+    autoShow: true, uiScale: 100, uiOpacity: 100,
+    pomoFocus: 25, pomoShort: 5, pomoLong: 15, pomoSessions: 4,
+    soundAlert: true, defaultTab: 'stopwatch',
+  };
+  let settings = { ...DEFAULTS };
+
   // ============ STATE ============
   let currentTab = 'stopwatch';
   let panelOpen = false;
@@ -178,14 +186,7 @@
     root.classList.remove('pt-visible');
   });
 
-  chrome.runtime.onMessage.addListener((msg) => {
-    if (msg.type === 'TOGGLE_PRODOTIME') {
-      root.classList.toggle('pt-hidden');
-      if (!root.classList.contains('pt-hidden')) {
-        root.classList.add('pt-visible');
-      }
-    }
-  });
+
 
   // ============ DRAG ============
   let isDragging = false, dragOffX = 0, dragOffY = 0;
@@ -549,7 +550,69 @@
   $panel.addEventListener('click', (e) => e.stopPropagation());
   $panel.addEventListener('mousedown', (e) => e.stopPropagation());
 
+  // ============ SETTINGS LISTENERS ============
+  chrome.runtime.onMessage.addListener((msg) => {
+    if (msg.type === 'TOGGLE_PRODOTIME') {
+      root.classList.toggle('pt-hidden');
+      if (!root.classList.contains('pt-hidden')) {
+        root.classList.add('pt-visible');
+      }
+    }
+    if (msg.type === 'PT_SETTINGS_UPDATED') {
+      Object.assign(settings, msg.settings);
+      applySettings();
+    }
+    if (msg.type === 'PT_RESET_POSITION') {
+      root.style.top = '16px';
+      root.style.left = 'calc(50% - 200px)';
+      localStorage.removeItem('pt-pos');
+    }
+  });
+
+  function applySettings() {
+    // Scale
+    const scale = settings.uiScale / 100;
+    root.style.transform = scale === 1 ? '' : `scale(${scale})`;
+    root.style.transformOrigin = 'top left';
+
+    // Opacity
+    root.style.opacity = settings.uiOpacity / 100;
+
+    // Auto Show
+    if (!settings.autoShow) {
+      root.classList.add('pt-hidden');
+      root.classList.remove('pt-visible');
+    }
+
+    // Pomodoro defaults (only if not running)
+    if (!pomo.running) {
+      pomo.focusMin = settings.pomoFocus;
+      pomo.shortMin = settings.pomoShort;
+      pomo.longMin = settings.pomoLong;
+      pomo.sessions = settings.pomoSessions;
+    }
+  }
+
   // ============ INIT ============
-  updateDisplay();
+  chrome.storage.sync.get(DEFAULTS, (data) => {
+    Object.assign(settings, data);
+    currentTab = settings.defaultTab || 'stopwatch';
+
+    // Set active tab button
+    root.querySelectorAll('.pt-tab-btn').forEach(b => {
+      b.classList.toggle('active', b.dataset.tab === currentTab);
+    });
+
+    // Apply pomodoro defaults
+    pomo.focusMin = settings.pomoFocus;
+    pomo.shortMin = settings.pomoShort;
+    pomo.longMin = settings.pomoLong;
+    pomo.sessions = settings.pomoSessions;
+    pomo.total = pomo.focusMin * 60 * 1000;
+    pomo.remain = pomo.total;
+
+    applySettings();
+    updateDisplay();
+  });
 
 })();

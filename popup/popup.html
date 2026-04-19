@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ProdoTime Settings</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="popup-root">
+    <!-- Header -->
+    <div class="popup-header">
+      <div class="popup-logo">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2 2"/><path d="M5 3 2 6"/><path d="M22 6l-3-3"/><line x1="12" y1="1" x2="12" y2="3"/></svg>
+      </div>
+      <div class="popup-title-group">
+        <h1>ProdoTime</h1>
+        <span class="popup-version">v2.1.0</span>
+      </div>
+    </div>
+
+    <!-- Settings Sections -->
+    <div class="popup-body">
+
+      <!-- Visibility -->
+      <div class="settings-section">
+        <div class="section-label">Display</div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-name">Auto Show</span>
+            <span class="setting-desc">Show overlay on every page</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="autoShow" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-name">UI Scale</span>
+            <span class="setting-desc" id="scaleValue">100%</span>
+          </div>
+          <input type="range" id="uiScale" class="range-slider" min="70" max="150" value="100" step="5">
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-name">Opacity</span>
+            <span class="setting-desc" id="opacityValue">100%</span>
+          </div>
+          <input type="range" id="uiOpacity" class="range-slider" min="40" max="100" value="100" step="5">
+        </div>
+      </div>
+
+      <!-- Pomodoro Defaults -->
+      <div class="settings-section">
+        <div class="section-label">Pomodoro Defaults</div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-name">Focus</span>
+            <span class="setting-desc">minutes</span>
+          </div>
+          <input type="number" id="pomoFocus" class="num-input" value="25" min="1" max="120">
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-name">Short Break</span>
+            <span class="setting-desc">minutes</span>
+          </div>
+          <input type="number" id="pomoShort" class="num-input" value="5" min="1" max="30">
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-name">Long Break</span>
+            <span class="setting-desc">minutes</span>
+          </div>
+          <input type="number" id="pomoLong" class="num-input" value="15" min="1" max="60">
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-name">Sessions</span>
+            <span class="setting-desc">before long break</span>
+          </div>
+          <input type="number" id="pomoSessions" class="num-input" value="4" min="1" max="10">
+        </div>
+      </div>
+
+      <!-- Behavior -->
+      <div class="settings-section">
+        <div class="section-label">Behavior</div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-name">Sound Alert</span>
+            <span class="setting-desc">Play sound on timer end</span>
+          </div>
+          <label class="toggle-switch">
+            <input type="checkbox" id="soundAlert" checked>
+            <span class="toggle-slider"></span>
+          </label>
+        </div>
+
+        <div class="setting-row">
+          <div class="setting-info">
+            <span class="setting-name">Default Tab</span>
+            <span class="setting-desc">Tab shown on load</span>
+          </div>
+          <select id="defaultTab" class="select-input">
+            <option value="stopwatch">Stopwatch</option>
+            <option value="countdown">Countdown</option>
+            <option value="sps">SPS</option>
+            <option value="pomodoro">Pomodoro</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="settings-section actions-section">
+        <button class="action-btn primary-btn" id="btnToggle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          Show / Hide Overlay
+        </button>
+        <button class="action-btn" id="btnResetPos">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          Reset Position
+        </button>
+        <button class="action-btn danger-btn" id="btnResetAll">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+          Reset All Settings
+        </button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="popup-footer">
+      <span class="save-status" id="saveStatus"></span>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>
