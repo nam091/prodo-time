@@ -178,13 +178,17 @@
   font-size: 21.5px;
   font-weight: 600;
   letter-spacing: -0.5px;
-  padding: 0 12px;
-  min-width: 108px;
+  padding: 0 16px;
+  min-width: 115px; /* Slightly wider for stability */
   text-align: center;
   color: var(--pt-text);
   flex-shrink: 0;
   cursor: default;
   text-shadow: 0 1px 3px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 2px;
 }
 
 .pt-time-display.running {
@@ -213,6 +217,15 @@
   transition: all var(--pt-transition);
   flex-shrink: 0;
   outline: none;
+  padding: 0; /* Clear default padding */
+}
+
+.pt-icon-play, .pt-icon-pause, .pt-icon-lap, .pt-icon-skip {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .pt-ctrl-btn svg {
