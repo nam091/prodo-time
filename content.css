@@ -36,7 +36,6 @@
   user-select: none;
   -webkit-user-select: none;
   pointer-events: auto;
-  transform: translateX(-50%);
 }
 
 #prodotime-root *,

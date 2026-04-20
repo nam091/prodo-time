@@ -62,15 +62,9 @@
   root.id = 'prodotime-root';
   root.className = 'pt-visible';
 
-  // Load position
-  root.style.top = '16px';
-  root.style.left = '50%';
-  chrome.storage.local.get('ptPos', (data) => {
-    if (data.ptPos) {
-      root.style.top = data.ptPos.top + 'px';
-      root.style.left = data.ptPos.centerX ? data.ptPos.centerX + 'px' : (data.ptPos.left + 'px');
-    }
-  });
+  // Load position — we store the center X of the bar
+  let initialCenterX = window.innerWidth / 2;
+  let initialTop = 16;
 
   root.innerHTML = `
     <div class="pt-bar" id="ptBar">
@@ -124,6 +118,23 @@
   const $panel = root.querySelector('#ptPanel');
   const $panelContent = root.querySelector('#ptPanelContent');
   const $close = root.querySelector('#ptClose');
+
+  // Position the bar centered
+  function applyBarPosition() {
+    const barW = $bar.offsetWidth;
+    root.style.top = initialTop + 'px';
+    root.style.left = Math.max(0, initialCenterX - barW / 2) + 'px';
+  }
+
+  // Set initial centered position, then override from storage
+  applyBarPosition();
+  chrome.storage.local.get('ptPos', (data) => {
+    if (data.ptPos) {
+      initialTop = data.ptPos.top || 16;
+      initialCenterX = data.ptPos.centerX || (window.innerWidth / 2);
+    }
+    applyBarPosition();
+  });
 
   // ============ TAB SWITCHING ============
   root.querySelectorAll('.pt-tab-btn').forEach(btn => {
@@ -203,17 +214,15 @@
   $bar.addEventListener('mousedown', (e) => {
     if (e.target.closest('button') || e.target.closest('input')) return;
     isDragging = true;
-    const rect = root.getBoundingClientRect();
-    const centerX = rect.left + rect.width / 2;
-    dragOffX = e.clientX - centerX;
-    dragOffY = e.clientY - rect.top;
+    dragOffX = e.clientX - root.offsetLeft;
+    dragOffY = e.clientY - root.offsetTop;
     $bar.classList.add('dragging');
     e.preventDefault();
   });
 
   document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
-    const x = Math.max(0, Math.min(window.innerWidth, e.clientX - dragOffX));
+    const x = Math.max(0, Math.min(window.innerWidth - 60, e.clientX - dragOffX));
     const y = Math.max(0, Math.min(window.innerHeight - 50, e.clientY - dragOffY));
     root.style.left = x + 'px';
     root.style.top = y + 'px';
@@ -223,11 +232,14 @@
     if (!isDragging) return;
     isDragging = false;
     $bar.classList.remove('dragging');
+    // Save center X for proper restoration
     const rect = root.getBoundingClientRect();
+    initialCenterX = rect.left + rect.width / 2;
+    initialTop = rect.top;
     chrome.storage.local.set({
       ptPos: {
-        top: rect.top,
-        centerX: rect.left + rect.width / 2
+        top: initialTop,
+        centerX: initialCenterX
       }
     });
   });
@@ -279,8 +291,10 @@
       }
 
       // Compact mode: ONLY collapse when running
+      // Compensate position to keep center group stationary
       const $wl = root.querySelector('#ptWingLeft');
       const $wr = root.querySelector('#ptWingRight');
+      const widthBefore = $bar.offsetWidth;
       if (isRunning) {
         $wl.classList.add('pt-wing-collapsed');
         $wr.classList.add('pt-wing-collapsed');
@@ -288,6 +302,11 @@
         $wl.classList.remove('pt-wing-collapsed');
         $wr.classList.remove('pt-wing-collapsed');
       }
+      // After class change, recalc left from saved center
+      requestAnimationFrame(() => {
+        const newW = $bar.offsetWidth;
+        root.style.left = (initialCenterX - newW / 2) + 'px';
+      });
 
       if (isRunning && panelOpen) {
         panelOpen = false;
@@ -493,8 +512,9 @@
       applySettings();
     }
     if (msg.type === 'PT_RESET_POSITION') {
-      root.style.top = '16px';
-      root.style.left = '50%';
+      initialCenterX = window.innerWidth / 2;
+      initialTop = 16;
+      applyBarPosition();
       chrome.storage.local.remove('ptPos');
     }
   });
