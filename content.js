@@ -301,36 +301,28 @@
         // Measure the left wing width BEFORE collapsing
         const leftWingW = $wl.offsetWidth + 4; // +4 for gap
         
-        // Remember current left as "expanded left"
-        const expandedLeft = root.offsetLeft;
-        const collapsedLeft = expandedLeft + leftWingW;
-        
-        // Store these for the reverse operation
-        root.dataset.expandedLeft = expandedLeft;
-        root.dataset.collapsedLeft = collapsedLeft;
+        // Remember expanded left for reverse
+        root.dataset.expandedLeft = root.offsetLeft;
 
-        // Jump root to collapsed position INSTANTLY
-        root.style.transition = 'none';
-        root.style.left = collapsedLeft + 'px';
-        void root.offsetWidth;
-        root.style.transition = '';
-
-        // Animate wings collapse
+        // Animate root.left in sync with wing collapse
+        // (CSS transition on root with same timing as wings)
         $wl.classList.add('pt-wing-collapsed');
         $wr.classList.add('pt-wing-collapsed');
+        root.style.left = (root.offsetLeft + leftWingW) + 'px';
       } else if (!isRunning && isCollapsed) {
         // Read back the stored expanded position
-        const expandedLeft = parseFloat(root.dataset.expandedLeft || root.offsetLeft);
+        const expandedLeft = parseFloat(root.dataset.expandedLeft);
         
-        // Jump root to expanded position INSTANTLY
-        root.style.transition = 'none';
-        root.style.left = expandedLeft + 'px';
-        void root.offsetWidth;
-        root.style.transition = '';
-
-        // Animate wings expand
-        $wl.classList.remove('pt-wing-collapsed');
-        $wr.classList.remove('pt-wing-collapsed');
+        if (!isNaN(expandedLeft)) {
+          // Animate wings expand + root.left back to expanded position
+          $wl.classList.remove('pt-wing-collapsed');
+          $wr.classList.remove('pt-wing-collapsed');
+          root.style.left = expandedLeft + 'px';
+        } else {
+          // Fallback: just expand without position change
+          $wl.classList.remove('pt-wing-collapsed');
+          $wr.classList.remove('pt-wing-collapsed');
+        }
       }
 
       if (isRunning && panelOpen) {
