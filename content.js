@@ -74,8 +74,9 @@
 
   root.innerHTML = `
     <div class="pt-bar" id="ptBar">
+      <!-- Left Wing (1fr) -->
       <div class="pt-wing pt-wing-left" id="ptWingLeft">
-        <div class="pt-drag" id="ptDrag">${ICONS.grip}</div>
+        <div class="pt-drag">${ICONS.grip}</div>
         <div class="pt-divider"></div>
         <button class="pt-tab-btn active" data-tab="stopwatch" title="Stopwatch">${ICONS.stopwatch}</button>
         <button class="pt-tab-btn" data-tab="countdown" title="Countdown">${ICONS.timer}</button>
@@ -84,28 +85,33 @@
         <div class="pt-divider"></div>
       </div>
 
-      <div class="pt-time-display" id="ptTimeDisplay">00:00<span class="pt-ms">.00</span></div>
+      <!-- Center Group (Auto) -->
+      <div class="pt-center-group">
+        <div class="pt-time-display" id="ptTimeDisplay">00:00<span class="pt-ms">.00</span></div>
+        <button class="pt-ctrl-btn play" id="ptPlay" title="Start">
+          <div class="pt-icon-play">${ICONS.play}</div>
+          <div class="pt-icon-pause">${ICONS.pause}</div>
+        </button>
+        <button class="pt-ctrl-btn" id="ptReset" title="Reset">${ICONS.reset}</button>
+        <button class="pt-ctrl-btn" id="ptExtra" title="Lap" style="display:none">
+          <div class="pt-icon-lap">${ICONS.lap}</div>
+          <div class="pt-icon-skip">${ICONS.skip}</div>
+        </button>
+      </div>
 
-      <button class="pt-ctrl-btn play" id="ptPlay" title="Start">
-        <div class="pt-icon-play">${ICONS.play}</div>
-        <div class="pt-icon-pause">${ICONS.pause}</div>
-      </button>
-      <button class="pt-ctrl-btn" id="ptReset" title="Reset">${ICONS.reset}</button>
-      <button class="pt-ctrl-btn" id="ptExtra" title="Lap" style="display:none">
-        <div class="pt-icon-lap">${ICONS.lap}</div>
-        <div class="pt-icon-skip">${ICONS.skip}</div>
-      </button>
-
+      <!-- Right Wing (1fr) -->
       <div class="pt-wing pt-wing-right" id="ptWingRight">
         <div class="pt-divider"></div>
-        <button class="pt-ctrl-btn" id="ptExpand" title="Expand">${ICONS.chevDown}</button>
-        <button class="pt-close" id="ptClose" title="Hide">${ICONS.x}</button>
+        <button class="pt-tab-btn" id="ptExpand" title="Expand Details">${ICONS.chevDown}</button>
+        <button class="pt-close" id="ptClose" title="Hide Overlay">${ICONS.x}</button>
+      </div>
+
+      <!-- Expand Panel -->
+      <div class="pt-panel" id="ptPanel">
+        <div id="ptPanelContent"></div>
       </div>
     </div>
-
-    <div class="pt-panel" id="ptPanel">
-      <div id="ptPanelContent"></div>
-    </div>`;
+  `;
   document.body.appendChild(root);
 
   // ============ REFS ============
@@ -272,11 +278,16 @@
         $extra.style.display = 'none';
       }
 
-      // Compact mode
+      // Compact mode: ONLY collapse when running
       const $wl = root.querySelector('#ptWingLeft');
       const $wr = root.querySelector('#ptWingRight');
-      $wl.classList.toggle('pt-wing-collapsed', isRunning);
-      $wr.classList.toggle('pt-wing-collapsed', isRunning);
+      if (isRunning) {
+        $wl.classList.add('pt-wing-collapsed');
+        $wr.classList.add('pt-wing-collapsed');
+      } else {
+        $wl.classList.remove('pt-wing-collapsed');
+        $wr.classList.remove('pt-wing-collapsed');
+      }
 
       if (isRunning && panelOpen) {
         panelOpen = false;
