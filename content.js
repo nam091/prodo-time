@@ -119,11 +119,27 @@
   const $panelContent = root.querySelector('#ptPanelContent');
   const $close = root.querySelector('#ptClose');
 
-  // Position the bar centered
+  // Position the bar centered, clamped to viewport
+  function clampToViewport() {
+    const barW = $bar.offsetWidth;
+    const barH = $bar.offsetHeight;
+    let left = parseInt(root.style.left) || 0;
+    let top = parseInt(root.style.top) || 0;
+    left = Math.max(0, Math.min(window.innerWidth - barW, left));
+    top = Math.max(0, Math.min(window.innerHeight - barH, top));
+    root.style.left = left + 'px';
+    root.style.top = top + 'px';
+  }
+
   function applyBarPosition() {
     const barW = $bar.offsetWidth;
-    root.style.top = initialTop + 'px';
-    root.style.left = Math.max(0, initialCenterX - barW / 2) + 'px';
+    const barH = $bar.offsetHeight;
+    let left = Math.max(0, initialCenterX - barW / 2);
+    let top = Math.max(0, initialTop);
+    left = Math.min(window.innerWidth - barW, left);
+    top = Math.min(window.innerHeight - barH, top);
+    root.style.top = top + 'px';
+    root.style.left = left + 'px';
   }
 
   // Set initial centered position, then override from storage
@@ -223,8 +239,8 @@
 
   document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
-    const x = Math.max(0, Math.min(window.innerWidth - 60, e.clientX - dragOffX));
-    const y = Math.max(0, Math.min(window.innerHeight - 50, e.clientY - dragOffY));
+    const x = Math.max(0, Math.min(window.innerWidth - $bar.offsetWidth, e.clientX - dragOffX));
+    const y = Math.max(0, Math.min(window.innerHeight - $bar.offsetHeight, e.clientY - dragOffY));
     root.style.left = x + 'px';
     root.style.top = y + 'px';
   });
@@ -309,6 +325,7 @@
         $wl.classList.add('pt-wing-collapsed');
         $wr.classList.add('pt-wing-collapsed');
         root.style.left = (currentLeft + leftWingW) + 'px';
+        clampToViewport();
       } else if (!isRunning && root._wingsCollapsed) {
         root._wingsCollapsed = false;
 
@@ -316,6 +333,7 @@
         $wl.classList.remove('pt-wing-collapsed');
         $wr.classList.remove('pt-wing-collapsed');
         root.style.left = root._expandedLeft + 'px';
+        clampToViewport();
       }
 
       if (isRunning && panelOpen) {
@@ -545,5 +563,8 @@
       }
     });
   });
+
+  // ============ RESIZE — Keep bar in viewport ============
+  window.addEventListener('resize', () => clampToViewport());
 
 })();
