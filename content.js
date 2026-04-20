@@ -217,6 +217,7 @@
     dragOffX = e.clientX - root.offsetLeft;
     dragOffY = e.clientY - root.offsetTop;
     $bar.classList.add('dragging');
+    root.classList.add('pt-dragging');
     e.preventDefault();
   });
 
@@ -232,6 +233,7 @@
     if (!isDragging) return;
     isDragging = false;
     $bar.classList.remove('dragging');
+    root.classList.remove('pt-dragging');
     // Save center X for proper restoration
     const rect = root.getBoundingClientRect();
     initialCenterX = rect.left + rect.width / 2;
@@ -294,19 +296,33 @@
       // Compensate position to keep center group stationary
       const $wl = root.querySelector('#ptWingLeft');
       const $wr = root.querySelector('#ptWingRight');
-      const widthBefore = $bar.offsetWidth;
-      if (isRunning) {
-        $wl.classList.add('pt-wing-collapsed');
-        $wr.classList.add('pt-wing-collapsed');
-      } else {
-        $wl.classList.remove('pt-wing-collapsed');
-        $wr.classList.remove('pt-wing-collapsed');
+      const wasCollapsed = $wl.classList.contains('pt-wing-collapsed');
+      const shouldCollapse = isRunning;
+
+      if (wasCollapsed !== shouldCollapse) {
+        // Measure wing widths before change
+        const wlW = $wl.offsetWidth;
+        const wrW = $wr.offsetWidth;
+
+        if (shouldCollapse) {
+          $wl.classList.add('pt-wing-collapsed');
+          $wr.classList.add('pt-wing-collapsed');
+          // Wings are going from wlW+wrW to 0
+          // Need to shift left by wlW (left wing disappearing pushes center left)
+          // But both sides disappear, so shift by (wlW - wrW) / 2 to keep center
+          const shift = (wlW - wrW) / 2;
+          root.style.left = (root.offsetLeft + shift) + 'px';
+        } else {
+          // Measure what the expanded widths will be by temporarily removing collapse
+          $wl.classList.remove('pt-wing-collapsed');
+          $wr.classList.remove('pt-wing-collapsed');
+          const newWlW = $wl.offsetWidth;
+          const newWrW = $wr.offsetWidth;
+          // Shift back
+          const shift = (newWlW - newWrW) / 2;
+          root.style.left = (root.offsetLeft - shift) + 'px';
+        }
       }
-      // After class change, recalc left from saved center
-      requestAnimationFrame(() => {
-        const newW = $bar.offsetWidth;
-        root.style.left = (initialCenterX - newW / 2) + 'px';
-      });
 
       if (isRunning && panelOpen) {
         panelOpen = false;

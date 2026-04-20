@@ -36,6 +36,7 @@
   user-select: none;
   -webkit-user-select: none;
   pointer-events: auto;
+  transition: left 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 #prodotime-root *,
@@ -96,6 +97,11 @@
 .pt-bar.dragging {
   cursor: grabbing;
   box-shadow: 0 20px 60px rgba(0,0,0,0.5), 0 5px 15px rgba(0,0,0,0.3);
+}
+
+/* Disable root transition during drag */
+#prodotime-root.pt-dragging {
+  transition: none !important;
 }
 
 /* ---- Drag Handle ---- */
