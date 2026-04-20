@@ -299,67 +299,53 @@
       const isCollapsed = $wl.classList.contains('pt-wing-collapsed');
 
       if (isRunning && !isCollapsed) {
-        // COLLAPSING: measure center group position BEFORE collapse
-        const centerGroup = root.querySelector('.pt-center-group');
-        const centerXBefore = centerGroup.getBoundingClientRect().left;
+        // Measure both wing widths BEFORE collapsing
+        const leftW = $wl.offsetWidth;
+        const rightW = $wr.offsetWidth;
+        // The center group will shift left by leftW and right by rightW
+        // Net shift = leftW (center moves left by leftW because left wing gone)
+        // But bar also shrinks by leftW + rightW, and bar is left-aligned
+        // So center shifts left by exactly leftW. Compensate:
+        const compensation = leftW;
 
-        // Temporarily disable transitions to measure FINAL collapsed position
-        $wl.style.transition = 'none';
-        $wr.style.transition = 'none';
+        // Disable root transition temporarily so left jumps instantly
         root.style.transition = 'none';
-        $wl.classList.add('pt-wing-collapsed');
-        $wr.classList.add('pt-wing-collapsed');
-
-        // Force layout recalc → now we can measure FINAL position
-        void $wl.offsetWidth;
-        const centerXAfter = centerGroup.getBoundingClientRect().left;
-        const drift = centerXAfter - centerXBefore;
-
-        // Set the compensated left immediately (no transition)
-        root.style.left = (root.offsetLeft - drift) + 'px';
-
-        // Now reverse the collapse to start the animation from expanded state
-        $wl.classList.remove('pt-wing-collapsed');
-        $wr.classList.remove('pt-wing-collapsed');
-        void $wl.offsetWidth; // force layout
-
-        // Re-enable transitions
-        $wl.style.transition = '';
-        $wr.style.transition = '';
+        root.style.left = (root.offsetLeft + compensation) + 'px';
+        void root.offsetWidth; // force reflow
         root.style.transition = '';
 
-        // Now trigger the real animated collapse
         $wl.classList.add('pt-wing-collapsed');
         $wr.classList.add('pt-wing-collapsed');
       } else if (!isRunning && isCollapsed) {
-        // EXPANDING: same technique in reverse
-        const centerGroup = root.querySelector('.pt-center-group');
-        const centerXBefore = centerGroup.getBoundingClientRect().left;
-
-        // Temporarily disable transitions to measure FINAL expanded position
-        $wl.style.transition = 'none';
-        $wr.style.transition = 'none';
-        root.style.transition = 'none';
+        // Remove collapse classes
         $wl.classList.remove('pt-wing-collapsed');
         $wr.classList.remove('pt-wing-collapsed');
 
+        // Measure what the wing widths will be (they're now expanding)
+        // We need the final expanded widths. Read them immediately after removing class
+        // but before transition starts (class removed, transition: none on wings temporarily)
+        $wl.style.transition = 'none';
+        $wr.style.transition = 'none';
         void $wl.offsetWidth;
-        const centerXAfter = centerGroup.getBoundingClientRect().left;
-        const drift = centerXAfter - centerXBefore;
+        const leftW = $wl.offsetWidth;
+        void $wl.offsetWidth;
 
-        root.style.left = (root.offsetLeft - drift) + 'px';
-
-        // Reverse to collapsed state
+        // Re-collapse to animate from collapsed state
         $wl.classList.add('pt-wing-collapsed');
         $wr.classList.add('pt-wing-collapsed');
         void $wl.offsetWidth;
 
-        // Re-enable transitions
+        // Restore transitions
         $wl.style.transition = '';
         $wr.style.transition = '';
+
+        // Set compensated position instantly
+        root.style.transition = 'none';
+        root.style.left = (root.offsetLeft - leftW) + 'px';
+        void root.offsetWidth;
         root.style.transition = '';
 
-        // Trigger real animated expand
+        // Now animate expand
         $wl.classList.remove('pt-wing-collapsed');
         $wr.classList.remove('pt-wing-collapsed');
       }
