@@ -293,35 +293,75 @@
       }
 
       // Compact mode: ONLY collapse when running
-      // Compensate position to keep center group stationary
+      // Keep center group at same screen position
       const $wl = root.querySelector('#ptWingLeft');
       const $wr = root.querySelector('#ptWingRight');
-      const wasCollapsed = $wl.classList.contains('pt-wing-collapsed');
-      const shouldCollapse = isRunning;
+      const isCollapsed = $wl.classList.contains('pt-wing-collapsed');
 
-      if (wasCollapsed !== shouldCollapse) {
-        // Measure wing widths before change
-        const wlW = $wl.offsetWidth;
-        const wrW = $wr.offsetWidth;
+      if (isRunning && !isCollapsed) {
+        // COLLAPSING: measure center group position BEFORE collapse
+        const centerGroup = root.querySelector('.pt-center-group');
+        const centerXBefore = centerGroup.getBoundingClientRect().left;
 
-        if (shouldCollapse) {
-          $wl.classList.add('pt-wing-collapsed');
-          $wr.classList.add('pt-wing-collapsed');
-          // Wings are going from wlW+wrW to 0
-          // Need to shift left by wlW (left wing disappearing pushes center left)
-          // But both sides disappear, so shift by (wlW - wrW) / 2 to keep center
-          const shift = (wlW - wrW) / 2;
-          root.style.left = (root.offsetLeft + shift) + 'px';
-        } else {
-          // Measure what the expanded widths will be by temporarily removing collapse
-          $wl.classList.remove('pt-wing-collapsed');
-          $wr.classList.remove('pt-wing-collapsed');
-          const newWlW = $wl.offsetWidth;
-          const newWrW = $wr.offsetWidth;
-          // Shift back
-          const shift = (newWlW - newWrW) / 2;
-          root.style.left = (root.offsetLeft - shift) + 'px';
-        }
+        // Temporarily disable transitions to measure FINAL collapsed position
+        $wl.style.transition = 'none';
+        $wr.style.transition = 'none';
+        root.style.transition = 'none';
+        $wl.classList.add('pt-wing-collapsed');
+        $wr.classList.add('pt-wing-collapsed');
+
+        // Force layout recalc → now we can measure FINAL position
+        void $wl.offsetWidth;
+        const centerXAfter = centerGroup.getBoundingClientRect().left;
+        const drift = centerXAfter - centerXBefore;
+
+        // Set the compensated left immediately (no transition)
+        root.style.left = (root.offsetLeft - drift) + 'px';
+
+        // Now reverse the collapse to start the animation from expanded state
+        $wl.classList.remove('pt-wing-collapsed');
+        $wr.classList.remove('pt-wing-collapsed');
+        void $wl.offsetWidth; // force layout
+
+        // Re-enable transitions
+        $wl.style.transition = '';
+        $wr.style.transition = '';
+        root.style.transition = '';
+
+        // Now trigger the real animated collapse
+        $wl.classList.add('pt-wing-collapsed');
+        $wr.classList.add('pt-wing-collapsed');
+      } else if (!isRunning && isCollapsed) {
+        // EXPANDING: same technique in reverse
+        const centerGroup = root.querySelector('.pt-center-group');
+        const centerXBefore = centerGroup.getBoundingClientRect().left;
+
+        // Temporarily disable transitions to measure FINAL expanded position
+        $wl.style.transition = 'none';
+        $wr.style.transition = 'none';
+        root.style.transition = 'none';
+        $wl.classList.remove('pt-wing-collapsed');
+        $wr.classList.remove('pt-wing-collapsed');
+
+        void $wl.offsetWidth;
+        const centerXAfter = centerGroup.getBoundingClientRect().left;
+        const drift = centerXAfter - centerXBefore;
+
+        root.style.left = (root.offsetLeft - drift) + 'px';
+
+        // Reverse to collapsed state
+        $wl.classList.add('pt-wing-collapsed');
+        $wr.classList.add('pt-wing-collapsed');
+        void $wl.offsetWidth;
+
+        // Re-enable transitions
+        $wl.style.transition = '';
+        $wr.style.transition = '';
+        root.style.transition = '';
+
+        // Trigger real animated expand
+        $wl.classList.remove('pt-wing-collapsed');
+        $wr.classList.remove('pt-wing-collapsed');
       }
 
       if (isRunning && panelOpen) {
