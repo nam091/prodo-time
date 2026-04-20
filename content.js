@@ -292,60 +292,43 @@
         $extra.style.display = 'none';
       }
 
-      // Compact mode: ONLY collapse when running
-      // Keep center group at same screen position
+      // Compact mode: collapse wings when running, expand when idle
       const $wl = root.querySelector('#ptWingLeft');
       const $wr = root.querySelector('#ptWingRight');
       const isCollapsed = $wl.classList.contains('pt-wing-collapsed');
 
       if (isRunning && !isCollapsed) {
-        // Measure both wing widths BEFORE collapsing
-        const leftW = $wl.offsetWidth;
-        const rightW = $wr.offsetWidth;
-        // The center group will shift left by leftW and right by rightW
-        // Net shift = leftW (center moves left by leftW because left wing gone)
-        // But bar also shrinks by leftW + rightW, and bar is left-aligned
-        // So center shifts left by exactly leftW. Compensate:
-        const compensation = leftW;
+        // Measure the left wing width BEFORE collapsing
+        const leftWingW = $wl.offsetWidth + 4; // +4 for gap
+        
+        // Remember current left as "expanded left"
+        const expandedLeft = root.offsetLeft;
+        const collapsedLeft = expandedLeft + leftWingW;
+        
+        // Store these for the reverse operation
+        root.dataset.expandedLeft = expandedLeft;
+        root.dataset.collapsedLeft = collapsedLeft;
 
-        // Disable root transition temporarily so left jumps instantly
+        // Jump root to collapsed position INSTANTLY
         root.style.transition = 'none';
-        root.style.left = (root.offsetLeft + compensation) + 'px';
-        void root.offsetWidth; // force reflow
-        root.style.transition = '';
-
-        $wl.classList.add('pt-wing-collapsed');
-        $wr.classList.add('pt-wing-collapsed');
-      } else if (!isRunning && isCollapsed) {
-        // Remove collapse classes
-        $wl.classList.remove('pt-wing-collapsed');
-        $wr.classList.remove('pt-wing-collapsed');
-
-        // Measure what the wing widths will be (they're now expanding)
-        // We need the final expanded widths. Read them immediately after removing class
-        // but before transition starts (class removed, transition: none on wings temporarily)
-        $wl.style.transition = 'none';
-        $wr.style.transition = 'none';
-        void $wl.offsetWidth;
-        const leftW = $wl.offsetWidth;
-        void $wl.offsetWidth;
-
-        // Re-collapse to animate from collapsed state
-        $wl.classList.add('pt-wing-collapsed');
-        $wr.classList.add('pt-wing-collapsed');
-        void $wl.offsetWidth;
-
-        // Restore transitions
-        $wl.style.transition = '';
-        $wr.style.transition = '';
-
-        // Set compensated position instantly
-        root.style.transition = 'none';
-        root.style.left = (root.offsetLeft - leftW) + 'px';
+        root.style.left = collapsedLeft + 'px';
         void root.offsetWidth;
         root.style.transition = '';
 
-        // Now animate expand
+        // Animate wings collapse
+        $wl.classList.add('pt-wing-collapsed');
+        $wr.classList.add('pt-wing-collapsed');
+      } else if (!isRunning && isCollapsed) {
+        // Read back the stored expanded position
+        const expandedLeft = parseFloat(root.dataset.expandedLeft || root.offsetLeft);
+        
+        // Jump root to expanded position INSTANTLY
+        root.style.transition = 'none';
+        root.style.left = expandedLeft + 'px';
+        void root.offsetWidth;
+        root.style.transition = '';
+
+        // Animate wings expand
         $wl.classList.remove('pt-wing-collapsed');
         $wr.classList.remove('pt-wing-collapsed');
       }
