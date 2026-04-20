@@ -25,7 +25,10 @@ let stateReady = false;
 let pendingMessages = [];
 
 chrome.storage.local.get(TIMER_STATE_KEY, (data) => {
-  if (data[TIMER_STATE_KEY]) {
+  if (chrome.runtime.lastError) {
+    console.error('[PT] Error loading state:', chrome.runtime.lastError);
+  }
+  if (data && data[TIMER_STATE_KEY]) {
     Object.assign(state, data[TIMER_STATE_KEY]);
   }
   stateReady = true;

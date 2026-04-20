@@ -62,9 +62,15 @@
   root.id = 'prodotime-root';
   root.className = 'pt-visible';
 
-  const savedPos = JSON.parse(localStorage.getItem('pt-pos') || 'null');
-  root.style.top = savedPos ? savedPos.top + 'px' : '16px';
-  root.style.left = savedPos ? savedPos.left + 'px' : 'calc(50% - 200px)';
+  // Load position
+  root.style.top = '16px';
+  root.style.left = '50%';
+  chrome.storage.local.get('ptPos', (data) => {
+    if (data.ptPos) {
+      root.style.top = data.ptPos.top + 'px';
+      root.style.left = data.ptPos.centerX ? data.ptPos.centerX + 'px' : (data.ptPos.left + 'px');
+    }
+  });
 
   root.innerHTML = `
     <div class="pt-bar" id="ptBar">
@@ -80,9 +86,15 @@
 
       <div class="pt-time-display" id="ptTimeDisplay">00:00<span class="pt-ms">.00</span></div>
 
-      <button class="pt-ctrl-btn play" id="ptPlay" title="Start">${ICONS.play}</button>
+      <button class="pt-ctrl-btn play" id="ptPlay" title="Start">
+        <div class="pt-icon-play">${ICONS.play}</div>
+        <div class="pt-icon-pause">${ICONS.pause}</div>
+      </button>
       <button class="pt-ctrl-btn" id="ptReset" title="Reset">${ICONS.reset}</button>
-      <button class="pt-ctrl-btn" id="ptExtra" title="Lap" style="display:none">${ICONS.lap}</button>
+      <button class="pt-ctrl-btn" id="ptExtra" title="Lap" style="display:none">
+        <div class="pt-icon-lap">${ICONS.lap}</div>
+        <div class="pt-icon-skip">${ICONS.skip}</div>
+      </button>
 
       <div class="pt-wing pt-wing-right" id="ptWingRight">
         <div class="pt-divider"></div>
@@ -185,15 +197,17 @@
   $bar.addEventListener('mousedown', (e) => {
     if (e.target.closest('button') || e.target.closest('input')) return;
     isDragging = true;
-    dragOffX = e.clientX - root.offsetLeft;
-    dragOffY = e.clientY - root.offsetTop;
+    const rect = root.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    dragOffX = e.clientX - centerX;
+    dragOffY = e.clientY - rect.top;
     $bar.classList.add('dragging');
     e.preventDefault();
   });
 
   document.addEventListener('mousemove', (e) => {
     if (!isDragging) return;
-    const x = Math.max(0, Math.min(window.innerWidth - 100, e.clientX - dragOffX));
+    const x = Math.max(0, Math.min(window.innerWidth, e.clientX - dragOffX));
     const y = Math.max(0, Math.min(window.innerHeight - 50, e.clientY - dragOffY));
     root.style.left = x + 'px';
     root.style.top = y + 'px';
@@ -203,61 +217,75 @@
     if (!isDragging) return;
     isDragging = false;
     $bar.classList.remove('dragging');
-    localStorage.setItem('pt-pos', JSON.stringify({ top: root.offsetTop, left: root.offsetLeft }));
+    const rect = root.getBoundingClientRect();
+    chrome.storage.local.set({
+      ptPos: {
+        top: rect.top,
+        centerX: rect.left + rect.width / 2
+      }
+    });
   });
 
   // ============ RENDER SNAPSHOT ============
   function renderSnapshot(snap) {
-    lastState = snap;
-    currentTab = snap.currentTab;
-
-    // Sync tab buttons
-    root.querySelectorAll('.pt-tab-btn').forEach(b => {
-      b.classList.toggle('active', b.dataset.tab === currentTab);
-    });
-
-    const isRunning = currentTab === 'stopwatch' ? snap.swRunning
-      : currentTab === 'countdown' ? snap.cdRunning
-      : currentTab === 'sps' ? snap.spsRunning
+    const isRunning = snap.currentTab === 'stopwatch' ? snap.swRunning
+      : snap.currentTab === 'countdown' ? snap.cdRunning
+      : snap.currentTab === 'sps' ? snap.spsRunning
       : snap.pomoRunning;
 
-    // Time
+    // Only update expensive DOM things if state changed
+    const stateStr = `${snap.currentTab}-${isRunning}-${snap.needsInput}`;
+    const stateChanged = !lastState || `${lastState.currentTab}-${(lastState.swRunning||lastState.cdRunning||lastState.spsRunning||lastState.pomoRunning)}-${lastState.needsInput}` !== stateStr;
+
+    lastState = snap;
+    if (currentTab !== snap.currentTab) {
+      currentTab = snap.currentTab;
+      root.querySelectorAll('.pt-tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === currentTab));
+    }
+
+    // Time (always update)
     let ms = 0;
     if (currentTab === 'stopwatch') ms = snap.swElapsed;
     else if (currentTab === 'countdown') ms = snap.cdRemain;
     else if (currentTab === 'sps') ms = snap.spsElapsed;
     else ms = snap.pomoRemain;
-    $time.innerHTML = `${fmtTime(ms)}<span class="pt-ms">.${fmtMs(ms)}</span>`;
+
+    const timeStr = `${fmtTime(ms)}<span class="pt-ms">.${fmtMs(ms)}</span>`;
+    if ($time.innerHTML !== timeStr) $time.innerHTML = timeStr;
     $time.classList.toggle('running', isRunning);
 
-    // Play/Pause
-    $play.innerHTML = isRunning ? ICONS.pause : ICONS.play;
-    $play.className = `pt-ctrl-btn ${isRunning ? 'pause' : 'play'}`;
+    if (stateChanged) {
+      // Play/Pause button
+      $play.className = `pt-ctrl-btn ${isRunning ? 'pause' : 'play'}`;
+      $play.title = isRunning ? 'Pause' : 'Start';
 
-    // Extra button
-    if (currentTab === 'stopwatch') {
-      $extra.style.display = 'flex';
-      $extra.innerHTML = ICONS.lap;
-      $extra.title = 'Lap';
-    } else if (currentTab === 'pomodoro') {
-      $extra.style.display = 'flex';
-      $extra.innerHTML = ICONS.skip;
-      $extra.title = 'Skip';
-    } else {
-      $extra.style.display = 'none';
+      // Extra button
+      if (currentTab === 'stopwatch') {
+        $extra.style.display = 'flex';
+        $extra.querySelector('.pt-icon-lap').style.display = 'block';
+        $extra.querySelector('.pt-icon-skip').style.display = 'none';
+        $extra.title = 'Lap';
+      } else if (currentTab === 'pomodoro') {
+        $extra.style.display = 'flex';
+        $extra.querySelector('.pt-icon-lap').style.display = 'none';
+        $extra.querySelector('.pt-icon-skip').style.display = 'block';
+        $extra.title = 'Skip';
+      } else {
+        $extra.style.display = 'none';
+      }
+
+      // Compact mode
+      const $wl = root.querySelector('#ptWingLeft');
+      const $wr = root.querySelector('#ptWingRight');
+      $wl.classList.toggle('pt-wing-collapsed', isRunning);
+      $wr.classList.toggle('pt-wing-collapsed', isRunning);
+
+      if (isRunning && panelOpen) {
+        panelOpen = false;
+        $panel.classList.remove('open');
+      }
+      if (!isRunning) applySettings();
     }
-
-    // Compact mode: collapse wings
-    const $wl = root.querySelector('#ptWingLeft');
-    const $wr = root.querySelector('#ptWingRight');
-    $wl.classList.toggle('pt-wing-collapsed', isRunning);
-    $wr.classList.toggle('pt-wing-collapsed', isRunning);
-
-    if (isRunning && panelOpen) {
-      panelOpen = false;
-      $panel.classList.remove('open');
-    }
-    if (!isRunning) applySettings();
     $reset.style.display = 'flex';
   }
 
@@ -457,8 +485,8 @@
     }
     if (msg.type === 'PT_RESET_POSITION') {
       root.style.top = '16px';
-      root.style.left = 'calc(50% - 200px)';
-      localStorage.removeItem('pt-pos');
+      root.style.left = '50%';
+      chrome.storage.local.remove('ptPos');
     }
   });
 
@@ -467,14 +495,15 @@
     Object.assign(settings, data);
     applySettings();
 
-    // Get initial state from background
+    // Always start polling
+    startPolling();
+
+    // Initial sync
     sendBg({ type: 'PT_GET_STATE' }).then((snap) => {
       if (snap) {
         renderSnapshot(snap);
         if (panelOpen) updatePanel();
       }
-      // Start smart polling
-      startPolling();
     });
   });
 

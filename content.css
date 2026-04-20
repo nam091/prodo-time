@@ -36,6 +36,10 @@
   user-select: none;
   -webkit-user-select: none;
   pointer-events: auto;
+  transform: translateX(-50%); /* Anchor center */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 #prodotime-root *,
@@ -222,6 +226,9 @@
   color: var(--pt-text);
   transform: scale(1.08);
 }
+
+.pt-ctrl-btn.play .pt-icon-pause { display: none; }
+.pt-ctrl-btn.pause .pt-icon-play { display: none; }
 
 .pt-ctrl-btn.play {
   background: rgba(129,140,248,0.22);
