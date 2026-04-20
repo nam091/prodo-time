@@ -295,34 +295,27 @@
       // Compact mode: collapse wings when running, expand when idle
       const $wl = root.querySelector('#ptWingLeft');
       const $wr = root.querySelector('#ptWingRight');
-      const isCollapsed = $wl.classList.contains('pt-wing-collapsed');
 
-      if (isRunning && !isCollapsed) {
+      if (isRunning && !root._wingsCollapsed) {
         // Measure the left wing width BEFORE collapsing
         const leftWingW = $wl.offsetWidth + 4; // +4 for gap
         
-        // Remember expanded left for reverse
-        root.dataset.expandedLeft = root.offsetLeft;
+        // Store current left (from style, not computed) for reverse
+        const currentLeft = parseInt(root.style.left) || root.offsetLeft;
+        root._expandedLeft = currentLeft;
+        root._wingsCollapsed = true;
 
-        // Animate root.left in sync with wing collapse
-        // (CSS transition on root with same timing as wings)
+        // Animate root.left + wing collapse in sync
         $wl.classList.add('pt-wing-collapsed');
         $wr.classList.add('pt-wing-collapsed');
-        root.style.left = (root.offsetLeft + leftWingW) + 'px';
-      } else if (!isRunning && isCollapsed) {
-        // Read back the stored expanded position
-        const expandedLeft = parseFloat(root.dataset.expandedLeft);
-        
-        if (!isNaN(expandedLeft)) {
-          // Animate wings expand + root.left back to expanded position
-          $wl.classList.remove('pt-wing-collapsed');
-          $wr.classList.remove('pt-wing-collapsed');
-          root.style.left = expandedLeft + 'px';
-        } else {
-          // Fallback: just expand without position change
-          $wl.classList.remove('pt-wing-collapsed');
-          $wr.classList.remove('pt-wing-collapsed');
-        }
+        root.style.left = (currentLeft + leftWingW) + 'px';
+      } else if (!isRunning && root._wingsCollapsed) {
+        root._wingsCollapsed = false;
+
+        // Animate wings expand + root.left back
+        $wl.classList.remove('pt-wing-collapsed');
+        $wr.classList.remove('pt-wing-collapsed');
+        root.style.left = root._expandedLeft + 'px';
       }
 
       if (isRunning && panelOpen) {
