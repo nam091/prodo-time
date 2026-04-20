@@ -325,7 +325,6 @@
         $wl.classList.add('pt-wing-collapsed');
         $wr.classList.add('pt-wing-collapsed');
         root.style.left = (currentLeft + leftWingW) + 'px';
-        clampToViewport();
       } else if (!isRunning && root._wingsCollapsed) {
         root._wingsCollapsed = false;
 
@@ -333,7 +332,6 @@
         $wl.classList.remove('pt-wing-collapsed');
         $wr.classList.remove('pt-wing-collapsed');
         root.style.left = root._expandedLeft + 'px';
-        clampToViewport();
       }
 
       if (isRunning && panelOpen) {
