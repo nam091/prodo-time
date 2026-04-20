@@ -262,13 +262,11 @@
       // Extra button
       if (currentTab === 'stopwatch') {
         $extra.style.display = 'flex';
-        $extra.querySelector('.pt-icon-lap').style.display = 'block';
-        $extra.querySelector('.pt-icon-skip').style.display = 'none';
+        $extra.className = 'pt-ctrl-btn lap';
         $extra.title = 'Lap';
       } else if (currentTab === 'pomodoro') {
         $extra.style.display = 'flex';
-        $extra.querySelector('.pt-icon-lap').style.display = 'none';
-        $extra.querySelector('.pt-icon-skip').style.display = 'block';
+        $extra.className = 'pt-ctrl-btn skip';
         $extra.title = 'Skip';
       } else {
         $extra.style.display = 'none';

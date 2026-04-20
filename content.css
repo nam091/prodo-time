@@ -223,7 +223,7 @@
 }
 
 .pt-icon-play, .pt-icon-pause, .pt-icon-lap, .pt-icon-skip {
-  display: flex !important;
+  display: flex;
   align-items: center;
   justify-content: center;
   width: 100%;
@@ -246,6 +246,8 @@
 
 .pt-ctrl-btn.play .pt-icon-pause { display: none; }
 .pt-ctrl-btn.pause .pt-icon-play { display: none; }
+.pt-ctrl-btn.lap .pt-icon-skip { display: none; }
+.pt-ctrl-btn.skip .pt-icon-lap { display: none; }
 
 .pt-ctrl-btn.play {
   background: rgba(129,140,248,0.22);
